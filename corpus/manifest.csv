@@ -1,0 +1,10 @@
+doc_id,path,source_type,file_format,version,status,authority_rank,effective_date
+tos_v3,official/01_terms_of_service_v3.md,official,md,3.0,approved,1,2026-09-01
+schedule_ab_v3,official/06_schedule_a_b_fees_and_disputes_v3.pdf,official,pdf,3.0,approved,1,
+tos_v2,superseded/02_terms_of_service_v2_superseded.md,superseded,md,2.0,superseded,2,
+draft_v3_5,drafts/05_terms_draft_v3_5_unpublished.docx,draft,docx,3.5-draft,draft,3,
+notes_policy_review,notes/03_policy_review_meeting_notes.md,meeting_notes,md,,informal,4,
+email_proration,emails/04_staff_email_proration.md,email,md,,informal,4,
+fees_sheet,spreadsheets/07_fees_working_sheet.xlsx,spreadsheet,xlsx,,informal,4,
+schedule_a_scan,scans/08_schedule_a_scanned_copy.pdf,scan,pdf,,informal,5,
+section3_photo,scans/09_terms_section3_phone_photo.jpg,photo,jpg,,informal,5,
