@@ -1,4 +1,4 @@
-# Arcaence Online Project (AOP)
+﻿# Arcaence Online Project (AOP)
 
 A base project for building agentic AI on a web platform. It starts with a RAG service, an MCP server and a multi-agent support desk for a fictional platform, **Arcaence Online**, and will grow in layers: evals, observability, security, governance and cloud.
 
@@ -90,4 +90,4 @@ Posts on the Arcaence blog that tell this project as a story. Each link is added
 
 | # | Post | Status |
 | --- | --- | --- |
-| 1 | Write the exam before the student | Draft |
+| 1 | [Define Good Before You Build: The Test Is the Requirements Document](https://www.arcaence.com/p/define-good-before-you-build-the) | Published |
