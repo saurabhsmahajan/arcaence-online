@@ -61,3 +61,33 @@ No real customers or traffic, one reviewer instead of a team, no legal review of
 
 - Synthetic data only.
 - No secrets in commits. Copy `.env.example` to `.env` and fill it in locally; `.env` is ignored.
+
+## Architecture
+
+The architecture is built in versions, one file per version, plus a log of every decision. Each version has a plain-language explanation at the bottom for readers new to the project.
+
+| Version | Date | What it shows |
+| --- | --- | --- |
+| [v0.1 Foundations](docs/architecture/v0.1-foundations.md) | 11 Nov 2026 | Corpus, evaluation set and database connection. The RAG pipeline is planned. |
+| [v0.2 Ingestion](docs/architecture/v0.2-ingestion.md) | 12 Nov 2026 | Loaders for every format, OCR, one record per file, duplicate check, findings log. |
+
+Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
+
+## Notes
+
+Study notes written as each part of the build is completed. Each concept is explained in plain language, with why it is needed, how it was built here, and the architect's view.
+
+| Day | Notes | Covers |
+| --- | --- | --- |
+| Day 1 (11 Nov) | [Foundations](docs/notes/day-01-foundations.md) | Workflow vs agent, RAG, source authority, loaders, embeddings, structured data, clause IDs, evaluation first, controls, engineering foundations. |
+| Day 2 (12 Nov) | [Ingestion hardening](docs/notes/day-02-ingestion.md) | Faithful extraction, prompt injection, OCR, one record contract, duplicates, findings as tests. |
+
+Findings from the ingestion work: [phase-1-ingestion.md](docs/build-logs/phase-1-ingestion.md).
+
+## Blogs
+
+Posts on the Arcaence blog that tell this project as a story. Each link is added when the post is published.
+
+| # | Post | Status |
+| --- | --- | --- |
+| 1 | Write the exam before the student | Draft |
