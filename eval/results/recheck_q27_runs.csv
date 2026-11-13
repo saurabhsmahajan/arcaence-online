@@ -1,0 +1,7 @@
+id,type,mode,run,verdict,passed,forbidden_cited,verifier_problems,answer
+Q27,trap,plain,1,correct,True,,,"I don't have information about a student discount for Arcaence Online. For current pricing and any available discounts, please check the official Arcaence Online website or contact their support team directly."
+Q27,trap,plain,2,correct,True,,,"I don't have information about a student discount for Arcaence Online. For current pricing and any available discounts, please check the pricing page on our website or contact our support team directly."
+Q27,trap,rag_off,1,wrong,False,notes_policy_review,"document is informal, not citable: [notes_policy_review]","No, Arcaence Online does not currently offer a student discount. A student discount has been discussed, but nothing has been decided, with no pricing or timeline, and it is not planned for v3 [notes_policy_review]."
+Q27,trap,rag_off,2,wrong,False,notes_policy_review,"document is informal, not citable: [notes_policy_review]","A student discount has been discussed, but nothing has been decided, and no pricing or timeline has been set. It is also not planned for v3 [notes_policy_review]."
+Q27,trap,rag_on,1,correct,True,,,NOT_FOUND
+Q27,trap,rag_on,2,abstained,True,,,NOT_FOUND

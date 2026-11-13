@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 
 import psycopg
@@ -87,15 +87,16 @@ def answer_question(question: str, mode: str) -> dict:
     path = route(question)
     labels, lines = set(), []
     if path == "sql":
-        for plan, billing, currency, price, _ in price_lookup(question):
-            lines.append(f"[plans_fees] {plan}, {billing}, {currency}: {price}")
+        for plan, billing, currency, price, note in price_lookup(question):
+            value = price if price is not None else note
+            lines.append(f"[plans_fees] {plan}, {billing}, {currency}: {value}")
         labels.add("plans_fees")
-    else:
-        rows = vector_search(question, 5, approved_only=(mode == "rag_on"))
-        for doc_id, clause_id, _status, content, _score in rows:
-            label = f"{doc_id} {clause_id}" if clause_id else doc_id
-            labels.add(label)
-            lines.append(f"[{label}] {content}")
+    # Policy questions often contain price words, so the vector index is always searched too.
+    rows = vector_search(question, 8, approved_only=(mode == "rag_on"))
+    for doc_id, clause_id, _status, content, _score in rows:
+        label = f"{doc_id} {clause_id}" if clause_id else doc_id
+        labels.add(label)
+        lines.append(f"[{label}] {content}")
     user = "Sources:\n" + "\n".join(lines) + f"\n\nQuestion: {question}"
     answer = ask_model(RAG_SYSTEM, user)
     return {"question": question, "mode": mode, "route": path, "sources": sorted(labels),

@@ -69,6 +69,8 @@ def load_doc_map():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=2)
+    ap.add_argument("--tag", default="baseline")
+    ap.add_argument("--ids", default="", help="comma-separated question ids")
     ap.add_argument("--limit", type=int, default=0, help="only the first N scoreable questions")
     args = ap.parse_args()
 
@@ -78,6 +80,9 @@ def main():
 
     scoreable = [q for q in golden if q["id"] not in NOT_SCOREABLE]
     skipped = [q["id"] for q in golden if q["id"] in NOT_SCOREABLE]
+    if args.ids:
+        wanted = set(args.ids.split(","))
+        scoreable = [q for q in scoreable if q["id"] in wanted]
     if args.limit:
         scoreable = scoreable[: args.limit]
     expect_abstain = {q["id"] for q in scoreable if q["expected_behavior"] == "refuse"}
@@ -126,7 +131,7 @@ def main():
                       f"forbidden={hit or '-'} problems={len(problems)} pass={passed}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    runs_path = OUT_DIR / "baseline_runs.csv"
+    runs_path = OUT_DIR / f"{args.tag}_runs.csv"
     with open(runs_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
@@ -158,7 +163,7 @@ def main():
     flaky = sorted({k[0] + "/" + k[1] for k, v in by_key.items() if len(v) > 1})
     lines += ["", f"Questions whose result changed between runs: {len(flaky)}", ""]
     lines += [f"- {k}" for k in flaky]
-    summary_path = OUT_DIR / "baseline_summary.md"
+    summary_path = OUT_DIR / f"{args.tag}_summary.md"
     summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n" + "\n".join(lines))
     print(f"\nSaved {runs_path} and {summary_path}")

@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 
 import psycopg
@@ -23,19 +23,22 @@ PLAN_PATTERNS = {
     "Extra seat": r"\bextra seats?\b",
 }
 CURRENCY_PATTERNS = {
-    "EUR": r"\b(eur|euros?)\b|€",
+    "EUR": r"\b(eur|euros?)\b|â‚¬",
     "USD": r"\b(usd|dollars?)\b|\$",
-    "INR": r"\b(inr|rupees?)\b|₹",
+    "INR": r"\b(inr|rupees?)\b|â‚¹",
 }
 
 
 def route(question: str) -> str:
-    return "sql" if PRICE_RE.search(question) else "vector"
+    return "sql" if (PRICE_RE.search(question) or any(re.search(p, question, re.I) for p in {**EXTRA_SEAT_PATTERN, **PLAN_PATTERNS}.values())) else "vector"
+
+
+EXTRA_SEAT_PATTERN = {"Extra seat": r"\b(extra|additional|add-on)\s+(team\s+)?seats?\b"}
 
 
 def price_lookup(question: str) -> list[tuple]:
     where, params = [], []
-    for plan, pattern in PLAN_PATTERNS.items():
+    for plan, pattern in {**EXTRA_SEAT_PATTERN, **{k: v for k, v in PLAN_PATTERNS.items() if k not in EXTRA_SEAT_PATTERN}}.items():
         if re.search(pattern, question, re.I):
             where.append("plan = %s")
             params.append(plan)
@@ -49,7 +52,7 @@ def price_lookup(question: str) -> list[tuple]:
         where.append("billing = 'annual'")
     elif re.search(r"\bmonth(ly)?\b", question, re.I):
         where.append("billing = 'monthly'")
-    sql = "select plan, billing, currency, price, source from plans_fees"
+    sql = "select plan, billing, currency, price, note from plans_fees"
     if where:
         sql += " where " + " and ".join(where)
     sql += " order by plan, billing, currency"
