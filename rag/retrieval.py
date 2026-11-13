@@ -8,6 +8,9 @@ from ingest.embed import embed_query
 
 load_dotenv()
 
+# Only approved documents may answer questions.
+ALLOWED_STATUSES = ["approved"]
+
 # Price intent only. "annual" or "monthly" alone is not enough, because
 # "Can I cancel my annual plan?" is a policy question.
 PRICE_RE = re.compile(
@@ -54,16 +57,26 @@ def price_lookup(question: str) -> list[tuple]:
         return conn.execute(sql, params).fetchall()
 
 
-def vector_search(question: str, k: int = 5) -> list[tuple]:
+def vector_search(question: str, k: int = 5, approved_only: bool = True) -> list[tuple]:
+    """Return (doc_id, clause_id, status, content, score) rows, best first.
+
+    approved_only=True applies the status filter inside the query, before ranking.
+    """
     vec = "[" + ",".join(f"{x:.6f}" for x in embed_query(question)) + "]"
     sql = (
         "select c.doc_id, c.clause_id, d.status, c.content, "
         "1 - (c.embedding <=> %s::vector) as score "
         "from chunks c join documents d on d.doc_id = c.doc_id "
-        "order by c.embedding <=> %s::vector limit %s"
     )
+    if approved_only:
+        sql += "where d.status = any(%s) "
+        params = (vec, ALLOWED_STATUSES, vec, k)
+    else:
+        params = (vec, vec, k)
+    # Equal similarity: the more authoritative document comes first
+    sql += "order by c.embedding <=> %s::vector, d.authority_rank limit %s"
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-        return conn.execute(sql, (vec, vec, k)).fetchall()
+        return conn.execute(sql, params).fetchall()
 
 
 QUESTIONS = [
@@ -82,5 +95,9 @@ if __name__ == "__main__":
             for plan, billing, currency, price, source in price_lookup(question):
                 print(f"   {plan} | {billing} | {currency} | {price}   ({source})")
         else:
-            for doc_id, clause_id, status, content, score in vector_search(question, 4):
-                print(f"   {score:.3f}  {doc_id:20} {str(clause_id):5} {status:11} {content[:60]}")
+            for label, flag in (("filter OFF", False), ("filter ON ", True)):
+                print(f"  {label}")
+                for doc_id, clause_id, status, content, score in vector_search(
+                        question, 4, approved_only=flag):
+                    print(f"   {score:.3f}  {doc_id:20} {str(clause_id):5} "
+                          f"{status:11} {content[:50]}")
