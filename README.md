@@ -82,6 +82,7 @@ Study notes written as each part of the build is completed. Each concept is expl
 | --- | --- | --- |
 | Day 1 (11 Nov) | [Foundations](docs/notes/day-01-foundations.md) | Workflow vs agent, RAG, source authority, loaders, embeddings, structured data, clause IDs, evaluation first, controls, engineering foundations. |
 | Day 2 (12 Nov) | [Ingestion hardening](docs/notes/day-02-ingestion.md) | Faithful extraction, prompt injection, OCR, one record contract, duplicates, findings as tests. |
+| Day 3 (13 Nov) | [Chunking, embeddings and routing](docs/notes/day-03-chunking-embeddings-routing.md) | Chunking, clause IDs and the registry, embeddings, vector index, repeatable loading, routing by data type, similarity versus authority, prices kept out of vectors. |
 
 Findings from the ingestion work: [phase-1-ingestion.md](docs/build-logs/phase-1-ingestion.md).
 
