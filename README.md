@@ -70,6 +70,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | --- | --- | --- |
 | [v0.1 Foundations](docs/architecture/v0.1-foundations.md) | 11 Nov 2026 | Corpus, evaluation set and database connection. The RAG pipeline is planned. |
 | [v0.2 Ingestion](docs/architecture/v0.2-ingestion.md) | 12 Nov 2026 | Loaders for every format, OCR, one record per file, duplicate check, findings log. |
+| [v0.3 Chunking and routing](docs/architecture/v0.3-chunking-and-routing.md) | 13 Nov 2026 | Clause-level chunks, local embeddings, vector index, price and policy routing. Status filter and answers are planned. |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
