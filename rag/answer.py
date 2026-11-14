@@ -1,4 +1,5 @@
-﻿import os
+import json
+import os
 import re
 
 import psycopg
@@ -10,6 +11,7 @@ from retrieval import price_lookup, route, vector_search
 load_dotenv()
 
 MODEL = "claude-haiku-5-5"
+MAX_RETRIES = 2
 client = Anthropic()
 
 # [tos_v3 2.2]  [schedule_ab_v3 B.2]  [plans_fees]
@@ -19,15 +21,41 @@ RAG_SYSTEM = (
     "You answer questions about Arcaence Online, a fictional subscription platform.\n"
     "Rules:\n"
     "- Answer only from the sources below. Do not use outside knowledge.\n"
-    "- After every statement that uses a source, cite it in square brackets exactly "
-    "as its label, for example [tos_v3 2.2] or [plans_fees].\n"
-    "- If the sources do not contain the answer, reply exactly: NOT_FOUND\n"
+    "- Each source starts with a label in square brackets, for example [tos_v3 2.2] "
+    "or [plans_fees]. List every source you used in citations: doc_id is the first "
+    "part of the label, clause_id is the second part (empty string for plans_fees).\n"
+    "- Write the answer text without square brackets.\n"
+    "- If the sources do not contain the answer, set refused to true, leave answer "
+    "and citations empty, and give a short refusal_reason.\n"
     "- Keep the answer to one or two sentences."
 )
 PLAIN_SYSTEM = (
     "You answer questions about Arcaence Online, a subscription platform. "
     "Keep the answer to one or two sentences."
 )
+
+SCHEMA = {
+    "type": "object",
+    "properties": {
+        "answer": {"type": "string"},
+        "citations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "doc_id": {"type": "string"},
+                    "clause_id": {"type": "string"},
+                },
+                "required": ["doc_id", "clause_id"],
+                "additionalProperties": False,
+            },
+        },
+        "refused": {"type": "boolean"},
+        "refusal_reason": {"type": "string"},
+    },
+    "required": ["answer", "citations", "refused", "refusal_reason"],
+    "additionalProperties": False,
+}
 
 _reference = None
 
@@ -51,6 +79,19 @@ def ask_model(system: str, user: str) -> str:
     )
     # The reply can start with a thinking block; keep only the text blocks
     return "".join(b.text for b in reply.content if b.type == "text").strip()
+
+
+def ask_structured(system: str, messages: list) -> tuple[dict | None, str]:
+    """One schema-constrained call. Returns (parsed result or None, raw text)."""
+    reply = client.messages.create(
+        model=MODEL, max_tokens=2000, system=system, messages=messages,
+        output_config={"format": {"type": "json_schema", "schema": SCHEMA}},
+    )
+    raw = "".join(b.text for b in reply.content if b.type == "text").strip()
+    try:
+        return json.loads(raw), raw
+    except ValueError:
+        return None, raw
 
 
 def verify(answer: str, given: set[str]) -> list[str]:
@@ -78,6 +119,47 @@ def verify(answer: str, given: set[str]) -> list[str]:
     return problems
 
 
+def label_of(citation: dict) -> str:
+    doc_id = citation["doc_id"].strip()
+    clause_id = citation["clause_id"].strip()
+    return f"{doc_id} {clause_id}" if clause_id else doc_id
+
+
+def check(result: dict, given: set[str]) -> list[str]:
+    """Problems with a structured answer. Empty list = acceptable."""
+    if result["refused"]:
+        return []  # a refusal makes no claims, so there is nothing to verify
+    problems = []
+    if not result["answer"].strip():
+        problems.append("answer is empty")
+    if not result["citations"]:
+        problems.append("answer has no citations")
+        return problems
+    text = " ".join(f"[{label_of(c)}]" for c in result["citations"])
+    problems += list(verify(text, given) or [])
+    return problems
+
+
+def answer_with_retry(system: str, user: str, labels: set[str]) -> dict:
+    """Ask, verify, and retry with the verifier's reasons. Never returns an unverified answer."""
+    messages = [{"role": "user", "content": user}]
+    log = []
+    for attempt in range(1, MAX_RETRIES + 2):
+        result, raw = ask_structured(system, messages)
+        problems = ["reply was not valid JSON"] if result is None else check(result, labels)
+        log.append({"attempt": attempt, "raw": raw, "problems": problems})
+        if not problems:
+            return {"result": result, "attempts": attempt, "log": log}
+        feedback = ("Your answer was rejected by the verifier:\n- " + "\n- ".join(problems)
+                    + "\nCite only the sources listed above, exactly by label, "
+                    "or refuse if they do not contain the answer.")
+        messages += [{"role": "assistant", "content": raw},
+                     {"role": "user", "content": feedback}]
+    fallback = {"answer": "", "citations": [], "refused": True,
+                "refusal_reason": "verification_failed"}
+    return {"result": fallback, "attempts": len(log), "log": log}
+
+
 def answer_question(question: str, mode: str) -> dict:
     """mode: plain, rag_off or rag_on."""
     if mode == "plain":
@@ -98,9 +180,18 @@ def answer_question(question: str, mode: str) -> dict:
         labels.add(label)
         lines.append(f"[{label}] {content}")
     user = "Sources:\n" + "\n".join(lines) + f"\n\nQuestion: {question}"
-    answer = ask_model(RAG_SYSTEM, user)
+
+    out = answer_with_retry(RAG_SYSTEM, user, labels)
+    result = out["result"]
+    if result["refused"]:
+        answer = "NOT_FOUND"
+    else:
+        cites = " ".join(f"[{label_of(c)}]" for c in result["citations"])
+        answer = f"{result['answer'].strip()} {cites}"
     return {"question": question, "mode": mode, "route": path, "sources": sorted(labels),
-            "answer": answer, "problems": verify(answer, labels)}
+            "answer": answer, "problems": [], "refused": result["refused"],
+            "refusal_reason": result["refusal_reason"], "citations": result["citations"],
+            "attempts": out["attempts"], "attempt_log": out["log"]}
 
 
 QUESTIONS = [
@@ -125,4 +216,4 @@ if __name__ == "__main__":
             r = answer_question(question, mode)
             print(f"  [{mode}] {r['answer'][:150]}")
             if r["problems"] is not None:
-                print(f"          check: {r['problems'] or 'passes'}")
+                print(f"          attempts: {r.get('attempts')}  refused: {r.get('refused')}")
