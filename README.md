@@ -72,6 +72,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | [v0.2 Ingestion](docs/architecture/v0.2-ingestion.md) | 12 Nov 2026 | Loaders for every format, OCR, one record per file, duplicate check, findings log. |
 | [v0.3 Chunking and routing](docs/architecture/v0.3-chunking-and-routing.md) | 13 Nov 2026 | Clause-level chunks, local embeddings, vector index, price and policy routing. Status filter and answers are planned. |
 | [v0.4 Cited answers and evaluation](docs/architecture/v0.4-cited-answers-and-evaluation.md) | 13 Nov 2026 | Cited answers with a code verifier, status filter before ranking, additive routing, golden-set scorer and saved baseline |
+| [v0.5 Structured answers and verified retry](docs/architecture/v0.5-structured-answers-and-verified-retry.md) | 14 Nov 2026 | Schema-constrained answers, one verifier gating every answer, bounded retry with feedback, safe refusal, structured_v1 results |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
