@@ -6,6 +6,7 @@ One entry per failure. Each entry has a cause, a fix and a test; an entry withou
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | FL-001 | Stale version | T02 | Q28 | Near-identical versions of one clause | Status filter before ranking (ADR-019) | `rag/test_retrieval_failures.py` | Fixed |
 | FL-002 | Rule split across clauses | T14 | Q07, Q38 | Formula clause 3.5 is dissimilar to the question; 3.6 points to it | Pull in clauses a retrieved clause names (ADR-029) | `rag/test_retrieval_failures.py` | Fixed |
+| FL-003 | Law versus policy | T03 | Q29 | Similarity cannot encode authority; the statute was not in the corpus at all | Authored a fictional statute as a new `statute` source type at authority rank 0 (ADR-030); retrieval ranking unchanged | `rag/test_retrieval_failures.py` | Retrieval half fixed; escalation open (Phase 3) |
 
 ## FL-001: stale version outranks the current one
 
@@ -63,3 +64,30 @@ All four fix the same single miss (Q07). They differ only in cost.
 - Only one question separates the strategies, and the corpus is small (36 approved clause chunks). Cross-reference is chosen on cost and reasoning, not proven the best.
 - It only helps where a pointer exists, and only for the exact phrase "Section X.Y". Q06 (3.5 at rank 6) and Q40 (5.3 at rank 6) are still fragile and have no pointer to follow.
 - Hybrid search and reranking were considered and not adopted: no miss remains at k=8 to justify the extra moving parts. Revisit when a miss appears that has no pointer, or the golden set grows.
+
+## FL-003: law and policy must be retrieved together
+
+**Symptom.** Q29 asks for a refund that the policy forbids (tos_v3 2.2: no refund once the content is downloaded or accessed) but that a statute would grant. The corpus had no statute, so the question could not be scored and nothing could be retrieved to contradict the policy.
+
+**Probe.** `uv run python probe.py Q29`. With the status filter on, the policy clause ranks first and the statute clauses follow: tos_v3 2.2, tos_v3 2.3, consumer_act 3.2, tos_v3 3.7, consumer_act 2.2, consumer_act 3.3, consumer_act 3.1, tos_v3 3.3. With the filter off, only consumer_act 3.2 reaches the top 8 on the statute side, so the statute side is incomplete.
+
+**Cause.** Similarity measures how close the wording is to the question, not which source outranks which. The policy is written about this exact situation, so it ranks above the law that overrides it. `authority_rank` is only a tiebreaker after distance, and by design it is not used to reorder results.
+
+**Options compared.**
+- Boost the score by authority rank. This would also reorder the near-identical stale versions (FL-001) and mix two jobs into one number.
+- Hybrid search or reranking. Neither knows that a statute outranks a policy.
+- Leave Q29 unscoreable. This hides the failure instead of testing it.
+- Add the higher-authority source to the corpus, keep ranking neutral, and make the decision that law wins an agent step. Chosen.
+
+**Fix.** A fictional Digital Goods Consumer Rights Act (`corpus/statute/10_digital_goods_consumer_rights_act_fictional.md`, 5 units) with its own source type `statute` (migration 003), `approved` status and authority rank 0. No change to the retrieval code. ADR-030.
+
+**Test.** `test_retrieval_failures.py`, FL-003: tos_v3 2.2 and consumer_act 2.2, 3.1, 3.2 are all in the top 8 with the filter on; statute rows are approved; the policy outranks the statute by similarity (the planted failure stays reproducible); with the filter off the statute side is incomplete.
+
+**Collateral effects found by the model run.** Adding an approved document affects questions that have nothing to do with it.
+1. *Number collision.* Statute clause 3.3 said a refund is paid "within 14 days", the same number as the superseded v2 refund window (T02). The statute surfaced at rank 3 for Q28 and the answers spent words explaining it. Fixed by changing the statute to 21 days after confirming that no other document uses 21. This is an authored-data fix, not a retrieval fix. After it, Q28 and Q31 answers cite one source each and do not mention the statute.
+2. *Q37 abstention.* Two abstentions in 8 rag_on runs. The new columns (`refused`, `refusal_reason`, `attempts`) showed the model had applied the 7-day rule correctly but returned it through the refusal field, and the scorer's `NOT_FOUND` boundary (ADR-028) hid the reason. The cause was the prompt, not the statute. Fixed by defining `refused` strictly (ADR-031). Q37 rag_on: 6/6.
+3. *Verifier gap.* One earlier Q31 answer carried a sentence about the statute with no citation and still passed. The verifier checks that every citation present is legitimate, not that every claim has one. Recorded as a known limit; not fixed.
+
+**Regression check.** After the prompt change, Q27, Q35, Q39 and Q40 (expected to refuse) are 12/12 on every mode over 3 runs, with 0 wrong answers. After the number fix, Q28, Q31 and Q37 are 9/9 on rag_off and rag_on, with 0 error rows.
+
+**What this does not show.** The escalation half is untested: nothing yet decides that the statute beats the policy and hands the case to a person, so Q29 stays out of the scorer until Phase 3. The statute is fictional and written by us, so it proves the retrieval path, not that real law retrieves this way. Runs per question are 3 to 6, which is thin. A full scorer run is still needed because a new approved document can affect every question.

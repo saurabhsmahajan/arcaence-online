@@ -54,3 +54,20 @@ for qid, need in NEEDED.items():
 q07_base = {label(r) for r in vector_search(question("Q07"), K, approved_only=True)}
 assert "tos_v3 3.5" not in q07_base, "planted failure gone: Q07 now finds 3.5 without expansion"
 print("PASS FL-002: pointer expansion recovers 3.5 and adds at most 2 chunks")
+
+# FL-003 law versus policy: both sides must be retrieved together; similarity does not rank law first
+LAW = ["consumer_act 2.2", "consumer_act 3.1", "consumer_act 3.2"]
+q29 = question("Q29")
+on = vector_search(q29, K, approved_only=True)
+on_labels = [label(r) for r in on]
+off_labels = [label(r) for r in vector_search(q29, K, approved_only=False)]
+print("Q29 filter on :", on_labels)
+print("Q29 filter off:", off_labels)
+
+assert "tos_v3 2.2" in on_labels, "policy clause 2.2 missing from the top 8"
+assert all(item in on_labels for item in LAW), "a conflicting statute clause is missing from the top 8"
+assert {r[2] for r in on if r[0] == "consumer_act"} == {"approved"}, "statute rows are not approved"
+first_law = min(on_labels.index(item) for item in LAW)
+assert on_labels.index("tos_v3 2.2") < first_law, "characterization changed: law now outranks policy by similarity alone"
+assert not all(item in off_labels for item in LAW), "filter off now returns the whole statute side"
+print("PASS FL-003 (retrieval half): policy and statute retrieved together; law is not ranked first by similarity")

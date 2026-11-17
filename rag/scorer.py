@@ -3,6 +3,9 @@
 Two independent verdicts per answer:
   1. Code checks: forbidden documents cited, verifier problems.
   2. Judge model: correct / wrong / abstained against the reference answer.
+
+Each run row also records refused, refusal_reason and attempts (from answer_question),
+so a refusal can be explained and the retry-rescue rate can be counted.
 """
 import argparse
 import re
@@ -99,10 +102,14 @@ def main():
         }
         for mode in MODES:
             for run in range(1, args.runs + 1):
+                refused, reason, attempts = "", "", ""
                 try:
                     res = answer_question(q["question"], mode)
                     answer = res["answer"] or ""
                     problems = list(res["problems"] or [])
+                    refused = res.get("refused", "")
+                    reason = res.get("refusal_reason") or ""
+                    attempts = res.get("attempts", "")
                     verdict = judge(q["question"], q["correct_answer"], answer)
                 except Exception as exc:  # API or DB hiccup: record, keep going
                     answer, problems, verdict = f"ERROR: {exc}", [], "error"
@@ -123,6 +130,7 @@ def main():
                 rows.append({
                     "id": q["id"], "type": q["type"], "mode": mode, "run": run,
                     "verdict": verdict, "passed": passed,
+                    "refused": refused, "refusal_reason": reason, "attempts": attempts,
                     "forbidden_cited": ";".join(hit),
                     "verifier_problems": " | ".join(problems),
                     "answer": answer.replace("\n", " ")[:600],

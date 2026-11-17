@@ -25,8 +25,12 @@ RAG_SYSTEM = (
     "or [plans_fees]. List every source you used in citations: doc_id is the first "
     "part of the label, clause_id is the second part (empty string for plans_fees).\n"
     "- Write the answer text without square brackets.\n"
-    "- If the sources do not contain the answer, set refused to true, leave answer "
-    "and citations empty, and give a short refusal_reason.\n"
+    "- Set refused to true only when the sources do not contain the information "
+    "needed to answer. If the sources contain a rule that leads to a no (for example "
+    "a deadline has passed), that is an answer: state the outcome in the answer field "
+    "and cite the clause. Do not set refused for it.\n"
+    "- When refused is true, leave answer and citations empty and give a short "
+    "refusal_reason.\n"
     "- Keep the answer to one or two sentences."
 )
 PLAIN_SYSTEM = (
