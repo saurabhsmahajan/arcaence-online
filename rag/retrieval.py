@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 
 import psycopg
@@ -81,6 +81,37 @@ def vector_search(question: str, k: int = 5, approved_only: bool = True) -> list
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         return conn.execute(sql, params).fetchall()
 
+
+XREF = re.compile(r"\bSection (\d+\.\d+)")
+
+
+def expand_references(rows: list[tuple], approved_only: bool = True) -> list[tuple]:
+    """Add clauses that a retrieved clause points to ("Section 3.5") from the same document.
+
+    Rows keep the (doc_id, clause_id, status, content, score) shape; added rows have score None.
+    One level only: a clause pulled in this way is not itself expanded.
+    """
+    have = {(r[0], r[1]) for r in rows}
+    wanted = []
+    for doc_id, clause_id, _status, content, _score in rows:
+        if not clause_id:
+            continue
+        for ref in XREF.findall(content):
+            if (doc_id, ref) not in have and (doc_id, ref) not in wanted:
+                wanted.append((doc_id, ref))
+    if not wanted:
+        return rows
+    sql = ("select c.doc_id, c.clause_id, d.status, c.content from chunks c "
+           "join documents d on d.doc_id = c.doc_id where c.doc_id = %s and c.clause_id = %s")
+    if approved_only:
+        sql += " and d.status = any(%s)"
+    extra = []
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        for doc_id, ref in wanted:
+            params = (doc_id, ref, ALLOWED_STATUSES) if approved_only else (doc_id, ref)
+            for doc, clause, status, content in conn.execute(sql, params).fetchall():
+                extra.append((doc, clause, status, content, None))
+    return rows + extra
 
 QUESTIONS = [
     "How much does the Pro plan cost per month in euros?",

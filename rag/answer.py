@@ -6,7 +6,7 @@ import psycopg
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
-from retrieval import price_lookup, route, vector_search
+from retrieval import expand_references, price_lookup, route, vector_search
 
 load_dotenv()
 
@@ -175,6 +175,7 @@ def answer_question(question: str, mode: str) -> dict:
         labels.add("plans_fees")
     # Policy questions often contain price words, so the vector index is always searched too.
     rows = vector_search(question, 8, approved_only=(mode == "rag_on"))
+    rows = expand_references(rows, approved_only=(mode == "rag_on"))
     for doc_id, clause_id, _status, content, _score in rows:
         label = f"{doc_id} {clause_id}" if clause_id else doc_id
         labels.add(label)

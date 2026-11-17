@@ -25,3 +25,32 @@ assert {r[2] for r in off} - {"approved"}, "filter off no longer returns stale t
 assert off_order.index("tos_v2 2.2") < off_order.index("tos_v3 2.2"), "planted failure gone: v2 no longer outranks v3"
 assert max(spread) - min(spread) < 0.01, "versions are no longer near-identical"
 print("PASS FL-001: fix holds and the planted failure is still reproducible")
+
+# FL-002 rule split across clauses: the formula clause 3.5 ranks low, but 3.6 points to it
+import csv
+from pathlib import Path
+
+from retrieval import expand_references
+
+GOLDEN = Path(__file__).resolve().parent.parent / "eval" / "golden_set_core.csv"
+
+
+def question(qid):
+    with open(GOLDEN, newline="", encoding="utf-8-sig") as f:
+        return next(r["question"] for r in csv.DictReader(f) if r["id"] == qid)
+
+
+NEEDED = {"Q07": ["tos_v3 3.5", "tos_v3 3.6"], "Q38": ["tos_v3 3.4", "tos_v3 3.5", "tos_v3 3.6"]}
+for qid, need in NEEDED.items():
+    base = vector_search(question(qid), K, approved_only=True)
+    expanded = expand_references(base, approved_only=True)
+    base_labels = {label(r) for r in base}
+    exp_labels = {label(r) for r in expanded}
+    print(f"{qid}: top-8 has {[n for n in need if n in base_labels]}; after expansion +{len(expanded) - len(base)} chunk(s)")
+    assert all(n in exp_labels for n in need), f"{qid}: a required clause is still missing"
+    assert len(expanded) - len(base) <= 2, f"{qid}: expansion added too many chunks"
+    assert {r[2] for r in expanded} == {"approved"}, f"{qid}: expansion added non-approved text"
+
+q07_base = {label(r) for r in vector_search(question("Q07"), K, approved_only=True)}
+assert "tos_v3 3.5" not in q07_base, "planted failure gone: Q07 now finds 3.5 without expansion"
+print("PASS FL-002: pointer expansion recovers 3.5 and adds at most 2 chunks")
