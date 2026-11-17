@@ -1,4 +1,4 @@
-﻿"""Golden-set scorer: runs each question through plain / rag_off / rag_on and grades it.
+"""Golden-set scorer: runs each question through plain / rag_off / rag_on and grades it.
 
 Two independent verdicts per answer:
   1. Code checks: forbidden documents cited, verifier problems.
@@ -23,7 +23,7 @@ from answer import CITE_RE, answer_question
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parent.parent
-GOLDEN = ROOT / "eval" / "golden_set_core.csv"
+GOLDEN_DIR = ROOT / "eval"
 OUT_DIR = ROOT / "eval" / "results"
 JUDGE_MODEL = "claude-sonnet-5-5"
 MODES = ["plain", "rag_off", "rag_on"]
@@ -75,10 +75,12 @@ def main():
     ap.add_argument("--tag", default="baseline")
     ap.add_argument("--ids", default="", help="comma-separated question ids")
     ap.add_argument("--limit", type=int, default=0, help="only the first N scoreable questions")
+    ap.add_argument("--golden", default="golden_set_core.csv",
+                    help="golden set file name inside eval/ (default: v1)")
     args = ap.parse_args()
 
     prefix_to_doc, known_docs = load_doc_map()
-    with open(GOLDEN, newline="", encoding="utf-8-sig") as f:
+    with open(GOLDEN_DIR / args.golden, newline="", encoding="utf-8-sig") as f:
         golden = list(csv.DictReader(f))
 
     scoreable = [q for q in golden if q["id"] not in NOT_SCOREABLE]
@@ -89,6 +91,7 @@ def main():
     if args.limit:
         scoreable = scoreable[: args.limit]
     expect_abstain = {q["id"] for q in scoreable if q["expected_behavior"] == "refuse"}
+    print(f"Golden set: {args.golden}")
     print(f"Scoring {len(scoreable)} questions x {len(MODES)} modes x {args.runs} runs")
     print(f"Not scoreable yet: {skipped}")
     print(f"Expected to abstain: {sorted(expect_abstain)}\n")
@@ -146,6 +149,7 @@ def main():
         w.writerows(rows)
 
     lines = ["# Baseline results", "",
+             f"Golden set: {args.golden}. "
              f"Questions scored: {len(scoreable)}. Runs per question: {args.runs}. "
              f"Not scoreable yet: {', '.join(skipped)}. Judge: {JUDGE_MODEL}.", "",
              "| Mode | All | Normal | Trap | Wrong | Abstained | Forbidden cited | Verifier problems |",
