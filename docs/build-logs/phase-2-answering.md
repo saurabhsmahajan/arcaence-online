@@ -40,7 +40,7 @@ Results: full run after all changes, 38 questions, 2 runs, 0 error rows. plain 1
 
 Decisions: pointer expansion (ADR-029); a statute tier at rank 0 with ranking left neutral (ADR-030); a strict `refused` definition and recorded refusal reasons (ADR-031).
 
-Done check met: each failure has a cause, a fix and a test (FL-001 to FL-003). Open: the law-over-policy decision and human hand-off are agent work, so Q29 stays out of the scorer. Carry-over: golden set v1.1 (Q24 reference omits clause 4.4; Q28 `must_not_cite_files` omits the meeting note; Q29 authoritative source still reads "regulation text (to be read)").
+Done check met: each failure has a cause, a fix and a test (FL-001 to FL-003). Open: the law-over-policy decision and human hand-off are agent work, so Q29 stays out of the scorer. Golden set v1.1 was completed on 17 Nov (Q24 reference, Q28 forbidden list, Q29 source); see eval/golden_set_changelog.md.
 
 ## 18 Nov: shared tables, auth, row-level security and G1
 
