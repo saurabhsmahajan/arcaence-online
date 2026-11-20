@@ -63,23 +63,26 @@ def price_lookup(question: str) -> list[tuple]:
 def vector_search(question: str, k: int = 5, approved_only: bool = True) -> list[tuple]:
     """Return (doc_id, clause_id, status, content, score) rows, best first.
 
-    approved_only=True applies the status filter inside the query, before ranking.
+    approved_only=True goes through the database function search_policy(), the single
+    guarded door: the status filter lives there and cannot be skipped.
+    approved_only=False is the evaluation-only unfiltered path (rag_off and the probe).
+    It reads the tables directly as the database owner and must never serve a customer.
     """
     vec = "[" + ",".join(f"{x:.6f}" for x in embed_query(question)) + "]"
-    sql = (
-        "select c.doc_id, c.clause_id, d.status, c.content, "
-        "1 - (c.embedding <=> %s::vector) as score "
-        "from chunks c join documents d on d.doc_id = c.doc_id "
-    )
-    if approved_only:
-        sql += "where d.status = any(%s) "
-        params = (vec, ALLOWED_STATUSES, vec, k)
-    else:
-        params = (vec, vec, k)
-    # Equal similarity: the more authoritative document comes first
-    sql += "order by c.embedding <=> %s::vector, d.authority_rank limit %s"
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-        return conn.execute(sql, params).fetchall()
+        if approved_only:
+            return conn.execute(
+                "select doc_id, clause_id, status, content, score "
+                "from search_policy(%s::vector, %s)",
+                (vec, k),
+            ).fetchall()
+        sql = (
+            "select c.doc_id, c.clause_id, d.status, c.content, "
+            "1 - (c.embedding <=> %s::vector) as score "
+            "from chunks c join documents d on d.doc_id = c.doc_id "
+            "order by c.embedding <=> %s::vector, d.authority_rank limit %s"
+        )
+        return conn.execute(sql, (vec, vec, k)).fetchall()
 
 
 XREF = re.compile(r"\bSection (\d+\.\d+)")
