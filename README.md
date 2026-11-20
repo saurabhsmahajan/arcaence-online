@@ -89,6 +89,7 @@ Study notes written as each part of the build is completed. Each concept is expl
 | Day 4 (13 Nov) | [Cited answers, verification and the first baseline](docs/notes/day-04-cited-answers-verification-baseline.md) | Grounded answers, code verifier, status filter, hybrid routing, golden-set baseline and after-fix numbers |
 | Day 5 (14 Nov) | [Structured answers, verification and retry](docs/notes/day-05-structured-answers-verification-retry.md) | Answer schema, refusal as a field, one verifier reused, bounded retry with feedback, safe refusal, stub-model tests, structured_v1 results and their caveats |
 | Day 6 (17 Nov) | [Retrieval failures, diagnosis and fixes](docs/notes/day-06-retrieval-failures-diagnosis-fixes.md) | Failure families, probing, recall without a model, status filter, pointer expansion, statute tier, characterization tests, collateral effects, strict refusal, full run 76/76 |
+| Day 7 (18 Nov) | [Access control, the guarded door and frozen contracts](docs/notes/day-07-access-control-guarded-door-contracts.md) | Row-level security, roles that bypass it, security-definer helper, the guarded door, least privilege, simulated-login tests, frozen reference test, contracts and drift test. |
 
 Findings from the ingestion work: [phase-1-ingestion.md](docs/build-logs/phase-1-ingestion.md).
 
