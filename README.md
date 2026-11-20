@@ -74,6 +74,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | [v0.4 Cited answers and evaluation](docs/architecture/v0.4-cited-answers-and-evaluation.md) | 13 Nov 2026 | Cited answers with a code verifier, status filter before ranking, additive routing, golden-set scorer and saved baseline |
 | [v0.5 Structured answers and verified retry](docs/architecture/v0.5-structured-answers-and-verified-retry.md) | 14 Nov 2026 | Schema-constrained answers, one verifier gating every answer, bounded retry with feedback, safe refusal, structured_v1 results |
 | [v0.6 Failure diagnosis and the statute tier](docs/architecture/v0.6-failure-diagnosis-and-statute-tier.md) | 17 Nov 2026 | Three diagnosed retrieval failures, pointer expansion, statute tier, strict refusal, probe and recall tools, full run 76/76 |
+| [v0.7 Access control and frozen contracts](docs/architecture/v0.7-access-control-and-frozen-contracts.md) | 18 Nov 2026 | Customer tables with row-level security, one guarded door to the policy knowledge, locked knowledge tables, frozen clause ids and answer schema, simulated-login tests, gate G1 met |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
