@@ -1,6 +1,6 @@
 # Phase 2: structured answers, failure diagnosis and access (16 to 18 Nov 2026)
 
-Status: in progress. The 16 and 17 Nov rows are done. The 18 Nov row and gate G1 are not started.
+Status: complete. The 16, 17 and 18 Nov rows are done and gate G1 was met on 20 Nov 2026.
 
 ## 16 Nov: structured answers, verifier gate and retry
 
@@ -44,4 +44,27 @@ Done check met: each failure has a cause, a fix and a test (FL-001 to FL-003). O
 
 ## 18 Nov: shared tables, auth, row-level security and G1
 
-Not started. Plan row: shared customer tables, Supabase Auth and row-level security, the `search_policy()` function, freeze clause IDs and the answer schema. Gate G1 is met when that row is done. This section is written when the work is done.
+The database now decides who sees what, the knowledge base sits behind one guarded function, and the two shapes other parts depend on are frozen. Work finished on 20 Nov. Findings:
+
+| Area | Finding | How we handle it | Test |
+| --- | --- | --- | --- |
+| Shared customer tables | The desk needs customers, orders and invoices. `customer_id` is repeated on each row so one policy can cover every table. | Migration 004: customers (plan, billing, currency, status, `auth_user_id`), orders, invoices. Two synthetic customers: cust_001 (Pro, monthly, EUR) and cust_002 (Team, annual, USD). RLS on, no policies, so nothing is readable until a policy says so. | Row counts after apply. |
+| Login linked to a customer | A row-level policy needs to know which customer the logged-in user is. | Two Supabase Auth users linked by email to the two customers (migration 005). `current_customer_id()` is a security-definer helper that reads `customers` by `auth.uid()` (migration 006). | Link check after apply. |
+| Row-level security | A customer must see only their own rows. This is the golden set's Q30 case: cust_001 asks about cust_002. | Three select policies, `customer_id = current_customer_id()`, for the `authenticated` role only. Anonymous access revoked. | `test_rls.py`, 10 checks with simulated logins (`set local role` plus `request.jwt.claims`). Q30 is blocked at the database. |
+| The guarded door | The knowledge tables had no explicit lockdown. Supabase gave the API roles no default select, but that is a default, not a rule. | `search_policy()` (migration 007): approved clauses only, ordered by distance then authority rank, limit capped at 50, security definer, granted to `authenticated` and `service_role` only. Direct access to documents, chunks, clause_registry and plans_fees revoked. | `test_search_policy.py`: a frozen reference query and the function return identical rows on all 40 golden questions at k=8, plus door checks. |
+| Retrieval switched to the door | `vector_search` read the tables directly. A test comparing it with the function would become a comparison with itself. | `vector_search` calls `search_policy()` when `approved_only`. The unfiltered direct query remains for evaluation only. The reference query is frozen inside the test. | Offline tests pass; a scorer subset re-run saved as `after_door_*`. |
+| Frozen contracts | Citations, the verifier, the golden set, and later the MCP server and agents depend on clause ids and the answer schema. | `contracts/clause_ids_v1.csv` (80 `(doc_id, clause_id)` pairs) and `contracts/answer_schema_v1.json`. The latest version is the contract. The freeze script refuses to overwrite a version. | `test_contracts.py`: schema equals the frozen file, all 80 ids still present, plus two checks that prove the test can fail. |
+
+Decisions: the guarded database door and the table lockdown (ADR-032); frozen contracts (ADR-033).
+
+Known limits, recorded in ADR-032:
+- Python connects as the database owner, which bypasses RLS. The guarantee holds for the API roles, not yet for our own code.
+- `expand_references` still reads clauses directly. It needs an equivalent restricted function.
+- The verifier checks provenance, not that a clause supports every claim (unchanged).
+- The escalation half of FL-003 (law outranks policy, human hand-off) is Phase 3 agent work.
+
+Phase 3 inherits: a restricted database role for agents, a clause-lookup function equivalent to `search_policy()`, and the escalation step.
+
+Commits: 783f766 (004), 54bdac1 (005, 006, `test_rls.py`), 9878e58 (007, `test_search_policy.py`), e44c35a (retrieval switch), 38825de and dc468ac (contracts), d6b51d0 (ADR-032, ADR-033).
+
+Done check met: customer A cannot read customer B's rows (Q30 blocked at the database and tested), retrieval goes through `search_policy()` with unchanged results, and clause ids and the answer schema are frozen with a test that fails on drift. **Gate G1 is met.**
