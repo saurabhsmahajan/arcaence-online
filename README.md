@@ -103,3 +103,4 @@ Posts on the Arcaence blog that tell this project as a story. Each link is added
 | # | Post | Status |
 | --- | --- | --- |
 | 1 | [Define Good Before You Build: The Test Is the Requirements Document](https://www.arcaence.com/p/define-good-before-you-build-the) | Published |
+| 2 | [What a RAG system must know before it answers](https://www.arcaence.com/p/what-a-rag-system-must-know-before) | Published |
