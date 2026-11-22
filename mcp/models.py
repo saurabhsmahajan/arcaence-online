@@ -54,3 +54,18 @@ class Subscription(Out):
     currency: Literal["EUR", "USD", "INR"]
     status: Literal["active", "suspended", "closed"]
     subscription_orders: list[SubscriptionOrder]
+
+
+class WriteResult(Out):
+    """What a write tool returns. status is preview (dry run), done (committed) or refused (with a reason code)."""
+    status: Literal["preview", "done", "refused"]
+    reason: str | None = None
+    token: str | None = None            # single-use; present only on a preview
+    expires_at: str | None = None
+    preview: dict[str, str] | None = None
+    cap_remaining_after: str | None = None
+    refund_id: str | None = None
+    cancellation_id: str | None = None
+    order_id: str | None = None
+    amount: str | None = None
+    currency: str | None = None
