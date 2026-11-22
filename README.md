@@ -75,6 +75,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | [v0.5 Structured answers and verified retry](docs/architecture/v0.5-structured-answers-and-verified-retry.md) | 14 Nov 2026 | Schema-constrained answers, one verifier gating every answer, bounded retry with feedback, safe refusal, structured_v1 results |
 | [v0.6 Failure diagnosis and the statute tier](docs/architecture/v0.6-failure-diagnosis-and-statute-tier.md) | 17 Nov 2026 | Three diagnosed retrieval failures, pointer expansion, statute tier, strict refusal, probe and recall tools, full run 76/76 |
 | [v0.7 Access control and frozen contracts](docs/architecture/v0.7-access-control-and-frozen-contracts.md) | 18 Nov 2026 | Customer tables with row-level security, one guarded door to the policy knowledge, locked knowledge tables, frozen clause ids and answer schema, simulated-login tests, gate G1 met |
+| [v0.8 MCP read tools and a launch-fixed role](docs/architecture/v0.8-mcp-read-tools-and-launch-fixed-role.md) | 19 Nov 2026 | An MCP server with three read tools, a read-only database login, PII masking in the server, a role fixed at launch, four layers that refuse a write, and a stdio done check |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
