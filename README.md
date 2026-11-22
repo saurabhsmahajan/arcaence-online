@@ -76,6 +76,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | [v0.6 Failure diagnosis and the statute tier](docs/architecture/v0.6-failure-diagnosis-and-statute-tier.md) | 17 Nov 2026 | Three diagnosed retrieval failures, pointer expansion, statute tier, strict refusal, probe and recall tools, full run 76/76 |
 | [v0.7 Access control and frozen contracts](docs/architecture/v0.7-access-control-and-frozen-contracts.md) | 18 Nov 2026 | Customer tables with row-level security, one guarded door to the policy knowledge, locked knowledge tables, frozen clause ids and answer schema, simulated-login tests, gate G1 met |
 | [v0.8 MCP read tools and a launch-fixed role](docs/architecture/v0.8-mcp-read-tools-and-launch-fixed-role.md) | 19 Nov 2026 | An MCP server with three read tools, a read-only database login, PII masking in the server, a role fixed at launch, four layers that refuse a write, and a stdio done check |
+| [v0.9 MCP write tools, dry run, token, cap and audit](docs/architecture/v0.9-mcp-write-tools-dry-run-token-cap-audit.md) | 20 Nov 2026 | Two write tools offered only to a write role, a dry run and a single-use token bound to the arguments, a cumulative refund cap, a required policy clause, a server-owned write schema and an append-only audit log. |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
