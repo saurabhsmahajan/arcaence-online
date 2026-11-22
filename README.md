@@ -20,7 +20,7 @@ Three layers, one problem:
 |---|---|
 | Phase 0: synthetic corpus, traps list, core golden set | Done |
 | RAG (ingestion, grounding, access control, evals, service) | Not started |
-| MCP server | Not started |
+| MCP server | In progress (read tools, masking and fixed role done) |
 | Multi-agent desk | Not started |
 
 Target for the first version (AOP v1): 30 November 2026. The plan is gate-based: G1 (RAG foundation), G2 (MCP attack harness), G3 (RAG eval in CI and review queue), G4 and G5 (desk and human gate), G6 (one scorecard across all three).
