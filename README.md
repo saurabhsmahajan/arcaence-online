@@ -19,8 +19,8 @@ Three layers, one problem:
 | Part | Status |
 |---|---|
 | Phase 0: synthetic corpus, traps list, core golden set | Done |
-| RAG (ingestion, grounding, access control, evals, service) | Not started |
-| MCP server | In progress (read tools, masking and fixed role done) |
+| RAG (ingestion, grounding, access control, evals, service) | In progress (ingestion, grounding, verified answers and access control done, gate G1 met) |
+| MCP server | In progress (read tools, masking, fixed role, write tools, privacy tools, accessibility tool, policy server, resource and prompt done) |
 | Multi-agent desk | Not started |
 
 Target for the first version (AOP v1): 30 November 2026. The plan is gate-based: G1 (RAG foundation), G2 (MCP attack harness), G3 (RAG eval in CI and review queue), G4 and G5 (desk and human gate), G6 (one scorecard across all three).
@@ -95,6 +95,7 @@ Study notes written as each part of the build is completed. Each concept is expl
 | Day 7 (18 Nov) | [Access control, the guarded door and frozen contracts](docs/notes/day-07-access-control-guarded-door-contracts.md) | Row-level security, roles that bypass it, security-definer helper, the guarded door, least privilege, simulated-login tests, frozen reference test, contracts and drift test. |
 | Day 8 (19 Nov) | [MCP read tools, masking and a fixed role](docs/notes/day-08-mcp-read-tools-masking-fixed-role.md) | MCP servers and tool contracts, a read-only database role, least privilege, defence in depth, PII masking, schema validation, role fixed at launch, fail closed, and three real 2025 incidents behind the decisions. |
 | Day 9 (20 Nov) | [MCP write tools, dry run, single-use token, cap and audit](docs/notes/day-09-mcp-write-tools-dry-run-token-cap-audit.md) | Write tools versus read tools, dry run, single-use token bound to the arguments, cumulative cap, clause required, audit log, server-owned write database, savepoints, advisory lock, replay, fail closed, and four real cases behind the decisions. |
+| Day 10 (21 Nov) | [Privacy tools, policy server, resource and prompt](docs/notes/day-10-privacy-tools-policy-server-resource-and-prompt.md) | Privacy requests that a person must finish, human approval and a 7-day cooling-off, a deletion process enforced by the database, counts-only export, a narrow security-definer door, a separate policy server, tools versus resources versus prompts, and three real cases behind the decisions. |
 
 Findings from the ingestion work: [phase-1-ingestion.md](docs/build-logs/phase-1-ingestion.md).
 
