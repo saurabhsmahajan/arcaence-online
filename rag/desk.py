@@ -1,9 +1,11 @@
 """Desk pipeline: classify the message, then take the path that fits.
 
-normal  -> answer_question(question, "rag_on"), exactly as before
-vague   -> one clarifying question, no retrieval
-hostile -> fixed reply (desk_logic.HOSTILE_REPLY) and a handoff flag, no model wording
-multi   -> retrieval, then a parts answer: each part is covered or not covered
+vague          -> one clarifying question, no retrieval
+hostile        -> fixed reply (desk_logic.HOSTILE_REPLY) and a handoff flag, no model wording
+normal, multi  -> retrieval, then a parts answer: each part is covered or not covered.
+                  One path for both, because the classifier cannot reliably tell a
+                  same-topic compound question from a single one (Q66 flipped 6 to 4 on
+                  repeated calls), and a flip must not change how the reply is built.
 
 answer.py is not changed: the measured rag_on path stays exactly what the older results
 were scored against. The handoff flag is only a flag for now; the review queue that
@@ -11,7 +13,7 @@ consumes it is built in Phase 4.
 """
 import json
 
-from answer import MAX_RETRIES, MODEL, answer_question, check, client, label_of
+from answer import MAX_RETRIES, MODEL, check, client, label_of
 from classifier import classify
 from desk_logic import (FALLBACK_CLARIFY, HOSTILE_REPLY, PARTS_SCHEMA, PARTS_SYSTEM,
                         compose_parts, parts_problems)
@@ -83,7 +85,7 @@ def desk_answer(question: str) -> dict:
     elif label == "hostile":
         out.update(behavior="escalate", answer=HOSTILE_REPLY,
                    handoff={"needed": True, "reason": "hostile"})
-    elif label == "multi":
+    else:  # normal and multi
         path, labels, lines = gather(question)
         user = "Sources:\n" + "\n".join(lines) + f"\n\nQuestion: {question}"
         res = parts_with_retry(user, labels)
@@ -99,11 +101,4 @@ def desk_answer(question: str) -> dict:
             out.update(behavior=behavior, answer=text, citations=flat,
                        refused=(behavior == "refuse"),
                        refusal_reason="no_part_covered" if behavior == "refuse" else "")
-    else:
-        res = answer_question(question, "rag_on")
-        out.update(behavior="refuse" if res["refused"] else "answer",
-                   route=res["route"], sources=res["sources"], answer=res["answer"],
-                   citations=res["citations"], refused=res["refused"],
-                   refusal_reason=res["refusal_reason"], attempts=res["attempts"],
-                   attempt_log=res["attempt_log"])
     return out

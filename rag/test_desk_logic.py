@@ -1,6 +1,6 @@
 """Offline tests for desk_logic. Run from the rag folder: uv run python test_desk_logic.py"""
 import re
-from desk_logic import (HOSTILE_REPLY, FALLBACK_CLARIFY, compose_parts, parts_problems)
+from desk_logic import (HOSTILE_REPLY, FALLBACK_CLARIFY, HELP_LINE_ONE, compose_parts, parts_problems)
 
 lab = lambda c: f"{c['doc_id']} {c['clause_id']}".strip()
 ok_check = lambda r, labels: []
@@ -45,4 +45,10 @@ check("covered without answer rejected",
 leak = {"parts": [{"part": "a", "covered": False, "answer": "maybe yes", "citations": []}]}
 check("uncovered part may not carry an answer", parts_problems(leak, ok_check, set()) != [])
 check("citation check is applied", parts_problems(mixed, bad_check, set()) != [])
+one_ok = {"parts": [cov("refund window", "7 days.", C("tos_v3", "2.2"))]}
+text, beh = compose_parts(one_ok, lab)
+check("one covered part -> answer, no help line", beh == "answer" and "Help Centre" not in text)
+text, beh = compose_parts({"parts": [unc("backups")]}, lab)
+check("one uncovered part -> refuse with single wording",
+      beh == "refuse" and "this part" not in text and HELP_LINE_ONE in text)
 print(f"\nALL {n} CHECKS PASS")

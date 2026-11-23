@@ -1,13 +1,13 @@
 {
   "rows": 60,
-  "unsupported": 2,
-  "unsupported_rate": 0.0333,
-  "passed": 56,
+  "unsupported": 0,
+  "unsupported_rate": 0.0,
+  "passed": 59,
   "by_behavior": {
     "answer": "6/6",
     "clarify": "20/20",
-    "escalate": "18/20",
-    "partial": "12/14"
+    "escalate": "19/20",
+    "partial": "14/14"
   },
   "pipeline": "desk",
   "golden": "golden_set_phase3.csv",

@@ -1,7 +1,8 @@
 """Pure logic for the desk pipeline. No API, database or network, so it tests offline.
 
 The desk pipeline classifies a message, then takes one of four paths:
-  normal   -> the existing rag_on answer path (unchanged)
+  normal   -> the same parts path as multi (a one-question message gives one part), so a
+              normal/multi label flip cannot change how the reply is built
   vague    -> one clarifying question
   hostile  -> a fixed reply written here, never by a model, plus a handoff flag
   multi    -> an answer split into parts; the model only decides covered or not covered,
@@ -21,6 +22,8 @@ FALLBACK_CLARIFY = (
 
 NOT_COVERED = "I can't find the answer to this part in the official documents, so I won't guess: {part}"
 HELP_LINE = "The Help Centre can help with the part I could not answer."
+NOT_COVERED_ONE = "I can't find the answer to this in the official documents, so I won't guess."
+HELP_LINE_ONE = "The Help Centre can help with this."
 
 PARTS_SCHEMA = {
     "type": "object",
@@ -57,16 +60,17 @@ PARTS_SCHEMA = {
 
 PARTS_SYSTEM = (
     "You answer questions about Arcaence Online, a fictional subscription platform.\n"
-    "The message contains more than one question. Split it into its separate questions "
-    "and treat each one as a part.\n"
+    "The message may contain one question or several. Split it into its separate "
+    "questions and treat each one as a part; a single question is one part.\n"
     "Rules:\n"
     "- Answer only from the sources below. Do not use outside knowledge.\n"
     "- Each source starts with a label in square brackets, for example [tos_v3 2.2] "
     "or [plans_fees]. doc_id is the first part of the label, clause_id is the second "
     "part (empty string for plans_fees).\n"
     "- For each part set covered to true only if the sources contain what is needed to "
-    "answer that part. Then write one sentence in answer, without square brackets, and "
-    "list every source you used in citations.\n"
+    "answer that part. Then write one or two sentences in answer, without square "
+    "brackets, that include every reason, condition, deadline and exception the sources "
+    "give for that part, and list every source you used in citations.\n"
     "- If the sources lead to a no (for example a deadline has passed), that is an "
     "answer: covered is true.\n"
     "- If the sources do not contain what that part needs, set covered to false and "
@@ -104,6 +108,8 @@ def parts_problems(result: dict, check_fn, labels: set[str]) -> list[str]:
 
 def compose_parts(result: dict, label_of) -> tuple[str, str]:
     """Final text and behaviour (answer, partial or refuse) for a verified parts result."""
+    if len(result["parts"]) == 1 and not result["parts"][0]["covered"]:
+        return f"{NOT_COVERED_ONE} {HELP_LINE_ONE}", "refuse"
     pieces, covered, missing = [], 0, 0
     for p in result["parts"]:
         if p["covered"]:

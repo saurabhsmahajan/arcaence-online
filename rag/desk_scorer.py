@@ -28,6 +28,8 @@ ROOT = Path(__file__).resolve().parent.parent
 EVAL = ROOT / "eval"
 OUT = EVAL / "results"
 
+NOT_SCOREABLE = {"Q29", "Q30"}  # same two the older scorer skips
+
 TONE_SYSTEM = """You judge the TONE of a customer support reply. Judge tone only, not facts.
 Reply with exactly one word: calm or not_calm.
 calm     = polite, steady, no blame, no sarcasm, no pressure, no scolding.
@@ -124,6 +126,10 @@ def main():
     client = anthropic.Anthropic()
     prefix_to_doc, _known = load_doc_map()
     golden = list(csv.DictReader(open(EVAL / args.golden, newline="", encoding="utf-8-sig")))
+    skipped = [q["id"] for q in golden if q["id"] in NOT_SCOREABLE]
+    golden = [q for q in golden if q["id"] not in NOT_SCOREABLE]
+    if skipped:
+        print(f"Not scoreable here (need a human handoff or access control): {skipped}")
     print(f"Pipeline: {args.pipeline}. Golden set: {args.golden}. "
           f"{len(golden)} questions x {args.runs} runs.\n")
 

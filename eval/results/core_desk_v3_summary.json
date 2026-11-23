@@ -1,0 +1,16 @@
+{
+  "rows": 76,
+  "unsupported": 0,
+  "unsupported_rate": 0.0,
+  "passed": 72,
+  "by_behavior": {
+    "answer": "64/68",
+    "refuse": "8/8"
+  },
+  "pipeline": "desk",
+  "golden": "golden_set_core_v1_1.csv",
+  "runs": 2,
+  "errors": 0,
+  "tone_not_calm": 0,
+  "correctness_wrong": 0
+}
