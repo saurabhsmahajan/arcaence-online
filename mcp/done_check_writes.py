@@ -54,7 +54,7 @@ async def run(client) -> int:
 
     tools = (await client.list_tools()).tools
     names = sorted(t.name for t in tools)
-    check(f"server offers exactly the two write tools {names}", names == ["cancel_subscription", "issue_refund"])
+    check(f"server offers exactly the write tools {names}", names == ["cancel_deletion_request", "cancel_subscription", "issue_refund", "request_account_deletion", "request_data_export"])
     check("no tool declares a role argument", all("role" not in t.input_schema["properties"] for t in tools))
     ok, _ = await call(client, "get_account", {"customer_id": "cust_001"})
     check("refused: the writer cannot read accounts (no such tool)", not ok)

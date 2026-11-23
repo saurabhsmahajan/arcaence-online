@@ -56,6 +56,13 @@ class Subscription(Out):
     subscription_orders: list[SubscriptionOrder]
 
 
+class AccessibilityInfo(Out):
+    """The approved accessibility wording, with its source. Nothing is added to it."""
+    citation: str
+    statement: str
+    note: str
+
+
 class WriteResult(Out):
     """What a write tool returns. status is preview (dry run), done (committed) or refused (with a reason code)."""
     status: Literal["preview", "done", "refused"]
@@ -69,3 +76,13 @@ class WriteResult(Out):
     order_id: str | None = None
     amount: str | None = None
     currency: str | None = None
+
+
+class PrivacyResult(Out):
+    """What a privacy tool returns. A request is only ever opened here; a person decides what happens next."""
+    status: Literal["requested", "cancelled", "refused"]
+    reason: str | None = None
+    kind: Literal["export", "deletion"] | None = None
+    request_id: str | None = None
+    inventory: dict[str, int] | None = None  # counts only, never the data
+    next_step: str | None = None

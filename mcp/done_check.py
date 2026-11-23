@@ -34,8 +34,8 @@ async def run(client) -> int:
 
     tools = (await client.list_tools()).tools
     names = sorted(t.name for t in tools)
-    check(f"server offers exactly the three read tools {names}",
-          names == ["get_account", "get_order", "get_subscription"])
+    check(f"server offers exactly the read tools {names}",
+          names == ["get_accessibility_info", "get_account", "get_order", "get_subscription"])
     check("no tool declares a role argument", all("role" not in t.input_schema["properties"] for t in tools))
 
     for cid in ("cust_001", "cust_002"):

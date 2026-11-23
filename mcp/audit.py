@@ -26,6 +26,8 @@ REASONS = {
     "token_expired",
     "token_used",
     "args_mismatch",
+    "request_already_open",
+    "no_open_request",
     "internal_error",
 }
 

@@ -4,9 +4,11 @@ import os
 from decimal import Decimal
 
 ROLE_TOOLS: dict[str, frozenset[str]] = {
-    "ops_reader": frozenset({"get_account", "get_order", "get_subscription"}),
+    "ops_reader": frozenset({"get_account", "get_order", "get_subscription", "get_accessibility_info"}),
     # The writer role has no read tools: it cannot see raw contact data, and agents read through the reader server.
-    "ops_writer": frozenset({"issue_refund", "cancel_subscription"}),
+    "ops_writer": frozenset({
+        "issue_refund", "cancel_subscription", "request_data_export", "request_account_deletion", "cancel_deletion_request",
+    }),
 }
 
 ROLE: str = os.environ.get("OPS_ROLE", "ops_reader")
@@ -25,16 +27,18 @@ REFUND_CAP: dict[str, Decimal] = {
 
 # A write must cite a clause from an approved document, and the clause must be a real basis for that action.
 # Superseded and draft documents are not on these lists, even though their ids exist in the frozen registry.
-REFUND_CLAUSES: frozenset[tuple[str, str]] = frozenset({
-    ("tos_v3", "2.2"),       # refund of a one-off purchase within 7 days, not downloaded
-    ("tos_v3", "2.4"),       # cancel an order before delivery, full refund
-    ("tos_v3", "3.3"),       # refund of an unintended renewal within 7 days
-    ("consumer_act", "3.2"), # statutory refund for a serious defect
-})
-CANCEL_CLAUSES: frozenset[tuple[str, str]] = frozenset({
-    ("tos_v3", "3.2"),       # cancel a subscription at least 24 hours before renewal
-    ("tos_v3", "6.3"),       # close an account at any time
-})
+REFUND_CLAUSE_NOTES: dict[tuple[str, str], str] = {
+    ("tos_v3", "2.2"): "refund of a one-off purchase within 7 days, not downloaded",
+    ("tos_v3", "2.4"): "cancel an order before delivery, full refund",
+    ("tos_v3", "3.3"): "refund of an unintended renewal within 7 days",
+    ("consumer_act", "3.2"): "statutory refund for a serious defect",
+}
+CANCEL_CLAUSE_NOTES: dict[tuple[str, str], str] = {
+    ("tos_v3", "3.2"): "cancel a subscription at least 24 hours before renewal",
+    ("tos_v3", "6.3"): "close an account at any time",
+}
+REFUND_CLAUSES: frozenset[tuple[str, str]] = frozenset(REFUND_CLAUSE_NOTES)
+CANCEL_CLAUSES: frozenset[tuple[str, str]] = frozenset(CANCEL_CLAUSE_NOTES)
 
 # A confirmation token from a dry run is valid for this many seconds, and for one commit only.
 CONFIRM_TOKEN_TTL_SECONDS: int = 600

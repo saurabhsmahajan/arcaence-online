@@ -43,6 +43,12 @@ def fetch_subscription_orders(customer_id: str) -> list[dict]:
     )
 
 
+def fetch_accessibility_statement() -> dict | None:
+    """The approved accessibility clause, through the one narrow database function that returns it."""
+    rows = _rows("select doc_id, clause_id, content from public.accessibility_statement()", ())
+    return rows[0] if rows else None
+
+
 def assert_login_role(expected: str) -> None:
     """Refuse to start if the database login is not the role this server was launched as."""
     actual = _rows("select current_user as u", ())[0]["u"]
