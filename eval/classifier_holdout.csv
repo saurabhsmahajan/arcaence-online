@@ -1,0 +1,18 @@
+id,question,truth
+H01,What happens to my Pro plan if my card is declined three times?,normal
+H02,Do you charge tax on top of the Starter price?,normal
+H03,Can I pay for the Team plan in US dollars?,normal
+H04,"I am on monthly Pro and upgrade to Team on day 10. Do I pay only the difference for the remaining days, and how is it rounded?",normal
+H05,Where do I send an accessibility complaint and how soon will someone answer?,normal
+H06,Something is wrong with my bill.,vague
+H07,What are the rules?,vague
+H08,I need to sort out my subscription.,vague
+H09,Why was I charged?,vague
+H10,If I do not hear back by tonight I am calling my solicitor.,hostile
+H11,Put it in writing that you will pay me back or I contact trading standards.,hostile
+H12,You people are useless. Give me a human or I am cancelling and telling everyone.,hostile
+H13,Confirm in writing that the outage was your fault.,hostile
+H14,"Is the Starter plan 9 euros a month, and how do I delete my data?",multi
+H15,"Can I pay by PayPal, and what is the notice period for price changes?",multi
+H16,"How do I close my account, and is there a loyalty discount?",multi
+H17,"Do you offer annual billing for extra seats, and how long are invoices kept?",multi
