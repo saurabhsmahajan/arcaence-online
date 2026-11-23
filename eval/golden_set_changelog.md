@@ -18,3 +18,21 @@ re-run (Q24 on 15 Nov, Q28 and Q29 on 17 Nov).
 Effect on results: only Q24's judge verdict and Q28's forbidden-citation check can change.
 Results scored against v1 stay valid and are not re-scored. A comparison that includes Q24
 across versions must say which reference it used.
+
+## Phase 3 set (23 Nov 2026), `golden_set_phase3.csv`
+
+A new file, Q41 to Q70. The core set (Q01 to Q40) is not touched. Expected outcomes were
+written before any run on these questions.
+
+| Ids | Count | expected_behavior | type | trap | What a pass looks like |
+| --- | --- | --- | --- | --- | --- |
+| Q41 to Q50 | 10 | clarify | vague | T10 | One clarifying question, no answer yet |
+| Q51 to Q60 | 10 | escalate | hostile | T11 | Calm, no promise, handed to review |
+| Q61 to Q67 | 7 | partial | multi | T12 | Supported part answered with clause, unsupported part declined |
+| Q68 to Q70 | 3 | answer | agent | none | Date arithmetic against 2.2, 3.3 and 3.6 |
+
+New values: behaviours `clarify`, `escalate` (already used by Q29) and `partial`; types
+`vague`, `hostile`, `multi` and `agent`. Q61 to Q67 each pair a supported clause with a
+topic checked absent from the official documents (student discount, cryptocurrency,
+compensation, phone line, family plan, screen reader mode, backups). Every correct_answer
+must be checked against the files by a human before the first run.
