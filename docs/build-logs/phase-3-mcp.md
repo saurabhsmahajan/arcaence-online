@@ -1,6 +1,6 @@
 # Phase 3: MCP server (19 Nov 2026 onward)
 
-Status: in progress. The 19 Nov and 20 Nov rows are done.
+Status: in progress. The 19 Nov, 20 Nov and 21 Nov rows are done.
 
 ## 19 Nov: read tools, masked data, role fixed at launch
 
@@ -61,3 +61,32 @@ Known limits:
 - Audit rows and unused tokens accumulate; there is no clean-up job.
 - The clause allowlists are code, read from `config.py`, and the registry is read from a file in the repo.
 - Refunds over the cap are refused, not queued. The review queue is planned for 26 Nov.
+
+## 21 Nov: privacy tools, accessibility tool, policy server, resource and prompt
+
+The ops server gains four tools, one resource and one prompt, and a second MCP server answers policy questions. A customer can now ask for a data export or an account deletion, but the AI can only file the request. A person approves it, and a database trigger refuses completion until a 7-day cooling-off has passed. Findings:
+
+| Area | Finding | How we handle it | Check |
+| --- | --- | --- | --- |
+| Deletion cannot be undone | A tool that deleted on request would let anyone who can talk to the chat erase a customer. | Migration 010 creates `ops.deletion_requests` with the states requested, approved, completed, rejected and cancelled. A trigger allows only the listed moves, blocks delete and truncate for everyone including the owner, locks the decision fields after approval, and refuses writer approve, reject or complete. The 7-day cooling-off starts at approval. A unique partial index allows one open request per customer. | `test_deletion_states.py`: 20 checks. |
+| What the AI may do | The AI should file and cancel, not decide. | No tool approves, rejects or completes a deletion. `ops_writer` has select, insert and update on two columns (`status`, `cancelled_by`). The tool path can only produce `requested` or `cancelled`. | `test_privacy_deletion.py`: 16 checks. `done_check_privacy.py`: 14 checks over the real server, including that a deletion cannot complete in one call. |
+| Export leaks | Returning a customer's data in chat would leak it through a shared or hijacked session. | Migration 011 creates `ops.export_requests`. The tool returns counts of orders and invoices only. A person who is not the writer confirms identity and sends the copy. | `test_privacy_export.py`: 17 checks. |
+| Privacy audit | Privacy attempts must be as traceable as refunds. | Each attempt writes an audit row in mode `commit` with clause `tos_v3 5.2`. Two reason codes are added, `request_already_open` and `no_open_request`, so there are now 18. | `test_privacy_deletion.py`, `done_check_privacy.py`. |
+| Reader needs one clause | The reader login has no rights on the knowledge tables but must give the accessibility statement. | Migration 012 adds `public.accessibility_statement()`, a security-definer function with no arguments that returns clause 6.4 of the approved `tos_v3`. Execute goes to `ops_reader` and `service_role`. The tool `get_accessibility_info` calls it. | `test_accessibility.py`: 9 checks. |
+| Policy search shares a trust domain | Policy text is edited by others and the search should not carry the power to touch customers or money. | A separate server, `policy_mcp`, with its own folder, dependencies (`fastembed`, `BAAI/bge-small-en-v1.5`, 384 dimensions) and login `policy_reader` (migration 013: read-only sessions, 5 second timeout, execute on `search_policy(vector,int)` only). Results carry citations and a note that passages are reference text, not instructions. A database error gives a generic message. | `test_policy_server.py` 17, `test_policy_login.py` 11, `done_check_policy.py` 8. |
+| Reference data can drift | A second copy of the refund limits would disagree with the checks sooner or later. | The resource `arcaence://refund-limits` is built from `config.py`. The prompt `investigate_refund_case` takes ids that must match `^cust_\d{3}$` and `^ord_\d{4}$`, so no free text enters the template. | `test_reference.py`: 16 checks. |
+| Tests assuming empty tables | The done check commits cancelled requests, so later runs saw leftover rows. Rows created in one transaction share a timestamp. | Tests read a baseline first, sort status lists and filter owner-side updates by status. | Second run of all privacy suites after the done check. |
+| Missing tools on the machine | The plan step assumed `supabase db push`, but the CLI is not installed. | Migrations are applied with `scripts/apply_sql.py`. | Migrations 010 to 013 applied and verified. |
+
+Decisions: deletion as a database-enforced process with human approval and cooling-off (ADR-042); export returns counts only (ADR-043); accessibility statement through a narrow security-definer function (ADR-044); a separate policy MCP server with its own login (ADR-045); reference material from one source with validated prompt arguments (ADR-046).
+
+Done check: met. "Deletion never completes in one call" holds at three levels: no tool exists to approve or complete a request; the tool path can only produce `requested`, shown through the real stdio server in `done_check_privacy.py`; and the database trigger refuses an out-of-order move and completion before the cooling-off ends. A 14-suite regression run of all earlier work also passed.
+
+Known limits:
+- The server does not check clause conditions. That stays with the agent, the verifier and the review queue.
+- The owner role can still change the `ops` schema (the limit in ADR-032).
+- The scripts for approving, completing and rejecting a deletion, and for fulfilling an export, do not exist yet. Today a person does those steps with plain database operations.
+- The embedding model name is written in both `rag` and `policy_mcp`. A mismatch would give poor search results, guarded only by a config constant.
+- An AI could cancel a legitimate deletion request. This is the safe direction, and it is audited.
+- The policy server has no rate limit.
+- The owner database password was shared in chat on 20 Nov. Rotating it is still open.
