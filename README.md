@@ -77,6 +77,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | [v0.7 Access control and frozen contracts](docs/architecture/v0.7-access-control-and-frozen-contracts.md) | 18 Nov 2026 | Customer tables with row-level security, one guarded door to the policy knowledge, locked knowledge tables, frozen clause ids and answer schema, simulated-login tests, gate G1 met |
 | [v0.8 MCP read tools and a launch-fixed role](docs/architecture/v0.8-mcp-read-tools-and-launch-fixed-role.md) | 19 Nov 2026 | An MCP server with three read tools, a read-only database login, PII masking in the server, a role fixed at launch, four layers that refuse a write, and a stdio done check |
 | [v0.9 MCP write tools, dry run, token, cap and audit](docs/architecture/v0.9-mcp-write-tools-dry-run-token-cap-audit.md) | 20 Nov 2026 | Two write tools offered only to a write role, a dry run and a single-use token bound to the arguments, a cumulative refund cap, a required policy clause, a server-owned write schema and an append-only audit log. |
+| [v0.10 MCP privacy tools, policy server, resource and prompt](docs/architecture/v0.10-mcp-privacy-tools-policy-server-resource-prompt.md) | 21 Nov 2026 | Privacy requests that only a person can finish, a deletion process enforced by the database with a 7-day cooling-off, a counts-only export, a narrow accessibility door, a separate policy server with its own login, and a refund-limits resource and investigation prompt built from one source. |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
