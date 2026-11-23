@@ -1,6 +1,6 @@
 # Phase 3: MCP server (19 Nov 2026 onward)
 
-Status: in progress. The 19 Nov, 20 Nov and 21 Nov rows are done.
+Status: in progress. The 19 Nov, 20 Nov, 21 Nov and 22 Nov rows are done.
 
 ## 19 Nov: read tools, masked data, role fixed at launch
 
@@ -90,3 +90,29 @@ Known limits:
 - An AI could cancel a legitimate deletion request. This is the safe direction, and it is audited.
 - The policy server has no rate limit.
 - The owner database password was shared in chat on 20 Nov. Rotating it is still open.
+
+## 22 Nov: attack harness, Inspector evidence and gate G2
+
+No new tool this day. A harness in `mcp/attacks/` plays the attacker against the real reader, writer and policy servers over stdio, and MCP Inspector is used by hand on the same servers. An attack passes only if the call is refused and the money and privacy tables are unchanged. The work found three real defects, all fixed.
+
+| Area | Finding | How we handle it | Check |
+| --- | --- | --- | --- |
+| Proving the controls | Unit tests show each control works when called directly, not that the servers hold under hostile input over the real transport. | `mcp/attacks/`: 32 attacks in six families (privilege, injection, money, privacy, leaks and poisoning, policy server). Each attack counts the ops tables before and after. Statuses are PASS, FAIL, KNOWN and SKIP, with exit codes 0, 1 and 2. | `docs/evidence/g2-attack-run-2026-11-23.md`: 31 PASS, 1 KNOWN, 0 FAIL, 0 SKIP. |
+| Ids with non-ASCII digits (B4) | The id patterns used `\d`, which in Python text patterns also matches digits from other scripts. | Patterns are now `^cust_[0-9]{3}$` and `^ord_[0-9]{4}$` in `models.py` and `reference.py`. This amends the patterns quoted in ADR-046. | B4; `test_reference.py` still passes. |
+| Odd amounts (B5) | `Decimal()` removes whitespace and underscores and accepts signs and full-width digits. A preview and token were issued for `' 19.00'`, `'1_0.00'` and `'19.00\n'`. | An ASCII regex, `[0-9]{1,9}(\.[0-9]{1,2})?`, runs before `Decimal()` in `policy.py`. | B5; `test_policy.py` (25), `test_actions.py` (27), `test_cancel.py` (25) pass. |
+| Output contract | Inspector rejected a valid `get_order` answer: `purchased_at` was declared as a date-time while the column is a date, so the value was a timestamp with no zone. The harness had missed it because it checked refusals and never validated successful answers. | The type is `date`. New `test_output_schema.py` validates every read tool's answer against its published schema with strict `date` and `date-time` formats. It failed on the old code and passes on the fix. | Inspector screenshots 2 and 3; `test_output_schema.py` (10 checks). |
+| A test that changed what it checked | Attack D5 first failed its own state check because it also called `request_data_export`, which writes a row. | The call was removed. Attacks declare which tables they may change (`may_change`), and anything else fails the run. | D5 passes. |
+| Runs leave rows | Each run leaves cancelled deletion requests for `cust_002` and one open export request for `cust_001`. No tool can cancel an export. | Declared in the attacks and recorded as a limit. The harness must not run against production data. | Report section "What this run does not cover". |
+| Inspector and the role | Inspector did not pass the shell's `OPS_ROLE` to the server it started, so the writer run first showed the reader's four tools. The default role is the reader, which is the safe direction. | The role is passed to Inspector with `-e OPS_ROLE=ops_writer`. | Inspector screenshots 1 and 5. |
+
+Decisions: ASCII-only ids and amounts (ADR-047); the pass rule, KNOWN gaps and skips that never count as a pass (ADR-048); answers must fit the published output schema, with a test (ADR-049).
+
+Done check: met. The full run is recorded in `docs/evidence/g2-attack-run-2026-11-23.md` (32 attacks: 31 blocked, 1 known gap D7, 0 failed, 0 skipped). Six Inspector screenshots are in `docs/evidence/inspector/`: the reader with four tools, the schema bug before and after the fix, an unknown order refused by the server, the writer with five tools, and a 60.00 refund on a 19.00 order refused as `over_refundable` with no token. The Day 11 notes and the v0.11 page are written.
+
+Known limits:
+- Many small refunds under the cap, and expired tokens, are proven below the transport in `test_policy.py` and `test_actions.py`, not in the harness run.
+- There is no rate limit and no load test yet (planned for 28 Nov).
+- D7: any agent can cancel any customer's open deletion request, because the server does not know the caller. The direction is safe and the action is audited. Closing it needs agents bound to one customer.
+- A passing run shows that the listed attacks are blocked, not that no attack exists.
+- The recorded run was made on commit `2157271` plus uncommitted changes, which were committed straight after as `bf53ae3` and `bd3cf6a`.
+- The scripts for the human steps (approve, complete, fulfil) still do not exist.

@@ -20,7 +20,7 @@ Three layers, one problem:
 |---|---|
 | Phase 0: synthetic corpus, traps list, core golden set | Done |
 | RAG (ingestion, grounding, access control, evals, service) | In progress (ingestion, grounding, verified answers and access control done, gate G1 met) |
-| MCP server | In progress (read tools, masking, fixed role, write tools, privacy tools, accessibility tool, policy server, resource and prompt done) |
+| MCP server | In progress (read tools, masking, fixed role, write tools, privacy tools, accessibility tool, policy server, resource and prompt, attack harness and Inspector evidence done) |
 | Multi-agent desk | Not started |
 
 Target for the first version (AOP v1): 30 November 2026. The plan is gate-based: G1 (RAG foundation), G2 (MCP attack harness), G3 (RAG eval in CI and review queue), G4 and G5 (desk and human gate), G6 (one scorecard across all three).
@@ -78,6 +78,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | [v0.8 MCP read tools and a launch-fixed role](docs/architecture/v0.8-mcp-read-tools-and-launch-fixed-role.md) | 19 Nov 2026 | An MCP server with three read tools, a read-only database login, PII masking in the server, a role fixed at launch, four layers that refuse a write, and a stdio done check |
 | [v0.9 MCP write tools, dry run, token, cap and audit](docs/architecture/v0.9-mcp-write-tools-dry-run-token-cap-audit.md) | 20 Nov 2026 | Two write tools offered only to a write role, a dry run and a single-use token bound to the arguments, a cumulative refund cap, a required policy clause, a server-owned write schema and an append-only audit log. |
 | [v0.10 MCP privacy tools, policy server, resource and prompt](docs/architecture/v0.10-mcp-privacy-tools-policy-server-resource-prompt.md) | 21 Nov 2026 | Privacy requests that only a person can finish, a deletion process enforced by the database with a 7-day cooling-off, a counts-only export, a narrow accessibility door, a separate policy server with its own login, and a refund-limits resource and investigation prompt built from one source. |
+| [v0.11 MCP attack harness and Inspector evidence](docs/architecture/v0.11-attack-harness-and-inspector-evidence.md) | 22 Nov 2026 | 32 attacks in six families against the real servers, a pass rule that needs a refusal and unchanged tables, three fixed defects (non-ASCII ids, odd amounts, a date-time schema bug) and the evidence for gate G2. |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
@@ -97,6 +98,7 @@ Study notes written as each part of the build is completed. Each concept is expl
 | Day 8 (19 Nov) | [MCP read tools, masking and a fixed role](docs/notes/day-08-mcp-read-tools-masking-fixed-role.md) | MCP servers and tool contracts, a read-only database role, least privilege, defence in depth, PII masking, schema validation, role fixed at launch, fail closed, and three real 2025 incidents behind the decisions. |
 | Day 9 (20 Nov) | [MCP write tools, dry run, single-use token, cap and audit](docs/notes/day-09-mcp-write-tools-dry-run-token-cap-audit.md) | Write tools versus read tools, dry run, single-use token bound to the arguments, cumulative cap, clause required, audit log, server-owned write database, savepoints, advisory lock, replay, fail closed, and four real cases behind the decisions. |
 | Day 10 (21 Nov) | [Privacy tools, policy server, resource and prompt](docs/notes/day-10-privacy-tools-policy-server-resource-and-prompt.md) | Privacy requests that a person must finish, human approval and a 7-day cooling-off, a deletion process enforced by the database, counts-only export, a narrow security-definer door, a separate policy server, tools versus resources versus prompts, and three real cases behind the decisions. |
+| Day 11 (22 Nov) | [Attack harness, Inspector evidence and gate G2](docs/notes/day-11-attack-harness-inspector-evidence-and-gate-g2.md) | Adversarial testing, the refused-and-unchanged pass rule, KNOWN gaps, ASCII-only input, output schema as a contract, client versus server checks, and three real cases behind the decisions. |
 
 Findings from the ingestion work: [phase-1-ingestion.md](docs/build-logs/phase-1-ingestion.md).
 
