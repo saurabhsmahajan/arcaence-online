@@ -5,8 +5,8 @@ import re
 
 import config
 
-CUSTOMER_RE = re.compile(r"^cust_\d{3}$")
-ORDER_RE = re.compile(r"^ord_\d{4}$")
+CUSTOMER_RE = re.compile(r"^cust_[0-9]{3}$")
+ORDER_RE = re.compile(r"^ord_[0-9]{4}$")
 
 
 def refund_limits() -> str:

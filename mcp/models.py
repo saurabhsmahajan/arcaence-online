@@ -6,8 +6,8 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 # Ids must look exactly like the synthetic ids. Anything else is refused before SQL runs.
-CustomerId = Annotated[str, Field(pattern=r"^cust_\d{3}$", description="Customer id, e.g. cust_001")]
-OrderId = Annotated[str, Field(pattern=r"^ord_\d{4}$", description="Order id, e.g. ord_1001")]
+CustomerId = Annotated[str, Field(pattern=r"^cust_[0-9]{3}$", description="Customer id, e.g. cust_001")]
+OrderId = Annotated[str, Field(pattern=r"^ord_[0-9]{4}$", description="Order id, e.g. ord_1001")]
 
 
 class Out(BaseModel):

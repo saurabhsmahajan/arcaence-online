@@ -1,5 +1,6 @@
 """Policy checks for the write tools. Pure functions: facts in, a reason code or None out. No database here."""
 import csv
+import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from functools import lru_cache
@@ -36,8 +37,13 @@ class RefundFacts:
     refunded_by_customer: Decimal # already refunded to this customer, in the order's currency
 
 
+AMOUNT_RE = re.compile(r"[0-9]{1,9}(\.[0-9]{1,2})?")
+
+
 def parse_amount(value) -> Decimal | None:
-    """A positive money amount with at most two decimals, else None."""
+    """A positive money amount with at most two decimals, else None. Plain ASCII digits only: Decimal() alone also accepts spaces, signs, underscores and non-ASCII digits."""
+    if not AMOUNT_RE.fullmatch(str(value)):
+        return None
     try:
         amount = Decimal(str(value))
     except (InvalidOperation, ValueError):
