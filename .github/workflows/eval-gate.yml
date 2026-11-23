@@ -49,7 +49,7 @@ jobs:
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
-      FASTEMBED_CACHE_PATH: ${{ runner.temp }}/fastembed
+      FASTEMBED_CACHE_PATH: ${{ github.workspace }}/.fastembed-cache
     defaults:
       run:
         working-directory: rag
@@ -74,7 +74,7 @@ jobs:
       - name: cache the embedding model
         uses: actions/cache@v4
         with:
-          path: ${{ runner.temp }}/fastembed
+          path: ${{ github.workspace }}/.fastembed-cache
           key: fastembed-bge-small-en-v1.5
 
       - name: database login is the read-only one
