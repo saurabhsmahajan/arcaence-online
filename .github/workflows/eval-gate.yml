@@ -1,0 +1,105 @@
+# Evaluation gate for the desk pipeline.
+# Fails the build when the unsupported-claim rate rises above eval/results/desk_baseline.json,
+# when the classifier gate fails, or when any scored row errors.
+#
+# Secrets (repository settings, Actions secrets), set by the owner, never committed:
+#   ANTHROPIC_API_KEY  a dedicated key for CI with its own spend limit
+#   CI_DATABASE_URL    the connection string of the read-only ci_eval login (migration 014)
+#
+# It runs on pushes to main and by hand. There is deliberately no pull_request trigger and
+# no pull_request_target: secrets must never be reachable from a fork.
+name: eval-gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rag/**"
+      - "eval/**"
+      - ".github/workflows/eval-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eval-gate
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    name: offline tests (no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: desk logic tests
+        run: python rag/test_desk_logic.py
+      - name: desk scoring tests
+        run: python rag/test_desk_scoring.py
+
+  gate:
+    name: classifier and desk gates
+    needs: offline
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+      FASTEMBED_CACHE_PATH: ${{ runner.temp }}/fastembed
+    defaults:
+      run:
+        working-directory: rag
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check secrets are present
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ] || [ -z "$DATABASE_URL" ]; then
+            echo "Missing secret: set ANTHROPIC_API_KEY and CI_DATABASE_URL in the repository's Actions secrets."
+            exit 1
+          fi
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: rag/uv.lock
+
+      - name: install dependencies
+        run: uv sync --frozen
+
+      - name: cache the embedding model
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/fastembed
+          key: fastembed-bge-small-en-v1.5
+
+      - name: database login is the read-only one
+        run: uv run python check_ci_role.py
+
+      - name: classifier gate (golden sets)
+        run: uv run python test_classifier.py
+
+      - name: classifier gate (holdout)
+        run: uv run python test_classifier.py --holdout
+
+      - name: desk gate (unsupported-claim rate must not rise)
+        run: uv run python desk_scorer.py --pipeline desk --tag ci --baseline ../eval/results/desk_baseline.json
+
+      - name: job summary
+        if: always()
+        run: |
+          if [ -f ../eval/results/ci_summary.json ]; then
+            { echo '### Desk gate'; echo '```json'; cat ../eval/results/ci_summary.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: keep the run files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-gate-results
+          path: eval/results/ci_*
+          if-no-files-found: ignore
