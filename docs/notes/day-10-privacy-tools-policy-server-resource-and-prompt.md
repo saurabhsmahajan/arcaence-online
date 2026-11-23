@@ -113,7 +113,7 @@ There is no tool to approve, reject or complete a deletion, and none to fulfil a
 
 ### 3.3 What happens on a deletion request
 
-1. The agent calls `request_account_deletion` with a customer id and a reason. The writer role is the only one that has this tool.
+1. The agent calls `request_account_deletion` with a customer id only (the tool has no free-text argument). The writer role is the only one that has this tool.
 2. The server validates the id pattern, checks that the customer exists and that no request is already open for them.
 3. It writes one row with status `requested`, in a savepoint, and writes an audit row with clause `tos_v3 5.2`.
 4. It returns the status `requested` and a next step: a person will confirm identity and review.
