@@ -1,0 +1,18 @@
+{
+  "rows": 60,
+  "unsupported": 14,
+  "unsupported_rate": 0.2333,
+  "passed": 6,
+  "by_behavior": {
+    "answer": "6/6",
+    "clarify": "0/20",
+    "escalate": "0/20",
+    "partial": "0/14"
+  },
+  "pipeline": "rag_on",
+  "golden": "golden_set_phase3.csv",
+  "runs": 2,
+  "errors": 0,
+  "tone_not_calm": 3,
+  "correctness_wrong": 0
+}

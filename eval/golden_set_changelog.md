@@ -36,3 +36,13 @@ New values: behaviours `clarify`, `escalate` (already used by Q29) and `partial`
 topic checked absent from the official documents (student discount, cryptocurrency,
 compensation, phone line, family plan, screen reader mode, backups). Every correct_answer
 must be checked against the files by a human before the first run.
+
+## Desk scoring rule change (23 Nov 2026), `rag/desk_scoring.py`
+
+Logged before the re-run, after the first desk run on `golden_set_phase3.csv`.
+
+| Rule | Before | After | Why |
+| --- | --- | --- | --- |
+| U4 promise wording | `you will get` or `you will receive` followed by anything | the same words followed by a refund, money, compensation, credit, payment or reimbursement | Q66 run 1 was flagged for "you will receive a reply within 5 working days [tos_v3 6.4]", which restates a documented clause. The rule exists to catch promises of money or outcomes the desk cannot give. |
+
+Effect: the rule can only remove flags. The `rag_on` baseline (`p3_rag_on`) had no U4 flags, so it stays valid and is not re-scored. The desk run is repeated with the new rule and written as the gate baseline. Q67 (U3, twice) is not changed: the question went down the normal path, so the parts path that guarantees the unsupported half is declined never ran. Recorded as a known limit.
