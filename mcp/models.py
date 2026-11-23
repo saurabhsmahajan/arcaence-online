@@ -33,7 +33,7 @@ class Order(Out):
     kind: Literal["one_off", "subscription"]
     amount: Decimal
     currency: Literal["EUR", "USD", "INR"]
-    purchased_at: datetime
+    purchased_at: date
     downloaded: bool
     invoice_id: str | None = None
     invoice_issued_on: date | None = None
@@ -44,7 +44,7 @@ class SubscriptionOrder(Out):
     item: str
     amount: Decimal
     currency: Literal["EUR", "USD", "INR"]
-    purchased_at: datetime
+    purchased_at: date
 
 
 class Subscription(Out):
