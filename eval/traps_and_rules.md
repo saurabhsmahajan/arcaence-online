@@ -42,5 +42,9 @@
 ## Not yet done
 
 - T03 needs a reading of the real regulation text before its expected answer is final.
-- About 30 more questions (vague, angry, multi-part, mixed: T10 to T12) are written in Phase 3.
+- T11 says "send to review", but until the review queue exists (Phase 4) the desk only sets a handoff flag and nothing reads it.
 - A human (you) must check every `correct_answer` against the files.
+
+## Done since
+
+- 23 Nov: the 30 Phase 3 questions (vague, angry, multi-part: T10 to T12) are written as Q41 to Q70 in `golden_set_phase3.csv`, with expected outcomes set before the first run.

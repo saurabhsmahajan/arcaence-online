@@ -60,7 +60,7 @@ Known limits:
 - The cap counts only refunds made through this server, and amounts are not converted between currencies.
 - Audit rows and unused tokens accumulate; there is no clean-up job.
 - The clause allowlists are code, read from `config.py`, and the registry is read from a file in the repo.
-- Refunds over the cap are refused, not queued. The review queue is planned for 26 Nov.
+- Refunds over the cap are refused, not queued. The review queue is planned for 24 Nov.
 
 ## 21 Nov: privacy tools, accessibility tool, policy server, resource and prompt
 
