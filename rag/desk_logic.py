@@ -9,6 +9,11 @@ The desk pipeline classifies a message, then takes one of four paths:
               and the wording for an uncovered part is fixed here
 """
 
+QUEUE_FAILED_REPLY = (
+    "I'm sorry, I could not pass your message to our team just now. "
+    "Please contact the Help Centre so a person can look at it."
+)
+
 HOSTILE_REPLY = (
     "I'm sorry this has been frustrating. I can't decide refunds, compensation or "
     "legal questions, and I don't want to say something I can't confirm. "
