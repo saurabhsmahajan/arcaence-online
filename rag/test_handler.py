@@ -2,6 +2,8 @@
 import re
 
 from desk_logic import HOSTILE_REPLY, QUEUE_FAILED_REPLY
+import tracing
+tracing.use_client(None)  # no real traces from tests
 from handler import handle_message
 
 n = 0

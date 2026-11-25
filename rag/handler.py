@@ -6,9 +6,14 @@ can run it with a read-only login. This handler is the layer that acts on the ha
 If a message needs a person, it is added to the review queue. If the queue cannot be written, a
 reply that says "marking it for review" would be untrue, so the escalate reply is replaced by a
 fixed one that promises nothing, and the result says the item was not queued.
+
+After the reply is settled, one trace is written for the case (metadata only, see tracing.py). A
+tracing failure is swallowed there: it can never change or delay the customer's reply.
 """
 import os
+import time
 
+import tracing
 from desk_logic import QUEUE_FAILED_REPLY
 
 
@@ -20,20 +25,26 @@ def _default_enqueue(result):
         return enqueue_answer(conn, result)
 
 
-def handle_message(question: str, answer_fn=None, enqueue_fn=None) -> dict:
+def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None) -> dict:
     if answer_fn is None:
         from desk import desk_answer as answer_fn
     enqueue_fn = enqueue_fn or _default_enqueue
+    trace_fn = trace_fn or tracing.record_case
+    started = time.perf_counter()
 
     result = answer_fn(question)
     result["review"] = {"needed": result["handoff"]["needed"], "queued": False, "item_id": None, "error": ""}
-    if not result["handoff"]["needed"]:
-        return result
+    if result["handoff"]["needed"]:
+        try:
+            result["review"]["item_id"] = str(enqueue_fn(result))
+            result["review"]["queued"] = True
+        except Exception as exc:  # the class name only: a message could carry connection details
+            result["review"]["error"] = type(exc).__name__
+            if result["behavior"] == "escalate":
+                result["answer"] = QUEUE_FAILED_REPLY
+
     try:
-        result["review"]["item_id"] = str(enqueue_fn(result))
-        result["review"]["queued"] = True
-    except Exception as exc:  # the class name only: a message could carry connection details
-        result["review"]["error"] = type(exc).__name__
-        if result["behavior"] == "escalate":
-            result["answer"] = QUEUE_FAILED_REPLY
+        trace_fn(result, int((time.perf_counter() - started) * 1000))
+    except Exception:  # tracing must never touch the reply
+        pass
     return result
