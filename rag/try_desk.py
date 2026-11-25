@@ -10,5 +10,5 @@ MESSAGES = [
 ]
 for m in MESSAGES:
     r = desk_answer(m)
-    print(f"\n> {m}\n  label={r['label']} behavior={r['behavior']} handoff={r['handoff']['needed']}")
+    print(f"\n> {m}\n  case={r['case_id']} label={r['label']} behavior={r['behavior']} handoff={r['handoff']['needed']}")
     print(f"  {r['answer']}")

@@ -14,6 +14,7 @@ consumes it is built in Phase 4.
 import json
 
 from answer import MAX_RETRIES, MODEL, check, client, label_of
+from case import new_case_id
 from classifier import classify
 from desk_logic import (FALLBACK_CLARIFY, HOSTILE_REPLY, PARTS_SCHEMA, PARTS_SYSTEM,
                         compose_parts, parts_problems)
@@ -72,6 +73,7 @@ def desk_answer(question: str) -> dict:
     cls = classify(question)
     label = cls["label"]
     out = {
+        "case_id": new_case_id(),
         "question": question, "mode": "desk", "label": label,
         "classifier_confidence": cls["confidence"], "classifier_note": cls["fallback_reason"],
         "behavior": "answer", "answer": "", "citations": [], "sources": [], "route": "none",
