@@ -130,4 +130,20 @@ check("a request over the concurrency limit is refused", post(c).status_code == 
 gate.set()
 first.join()
 check("and it works again afterwards", post(c).status_code == 200)
+# --- shutdown: the last traces are flushed, and a failing flush cannot break the exit
+from fastapi.testclient import TestClient
+
+flushed = []
+with TestClient(create_app(handle=fake, keys={"web": KEY}, on_shutdown=lambda: flushed.append(1))) as live:
+    check("nothing is flushed while running", flushed == [] and live.get("/healthz").status_code == 200)
+check("the stop flushes once", flushed == [1])
+
+
+def bad_flush():
+    raise RuntimeError("langfuse down: secret detail")
+
+
+with TestClient(create_app(handle=fake, keys={"web": KEY}, on_shutdown=bad_flush)) as live:
+    live.get("/healthz")
+check("a failing flush does not break the stop", True)
 print(f"\n{n} checks passed")

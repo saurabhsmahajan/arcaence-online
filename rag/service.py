@@ -11,12 +11,14 @@ import hmac
 import logging
 import os
 import threading
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+import tracing
 from limits import DailyCap, TokenBucket
 
 log = logging.getLogger("desk.service")
@@ -45,7 +47,8 @@ class MessageIn(BaseModel):
 
 
 def create_app(handle=None, keys: dict[str, str] | None = None, limiter: TokenBucket | None = None,
-               cap: DailyCap | None = None, max_concurrent: int | None = None) -> FastAPI:
+               cap: DailyCap | None = None, max_concurrent: int | None = None,
+               on_shutdown=None) -> FastAPI:
     keys = keys if keys is not None else parse_keys(os.environ.get("SERVICE_API_KEYS", ""))
     if not keys:
         raise RuntimeError("SERVICE_API_KEYS is not set: the service will not start without API keys")
@@ -55,7 +58,17 @@ def create_app(handle=None, keys: dict[str, str] | None = None, limiter: TokenBu
     cap = cap or DailyCap(_env_int("DAILY_CAP", 500))
     slots = threading.BoundedSemaphore(max_concurrent or _env_int("MAX_CONCURRENT", 4))
 
-    app = FastAPI(title="Arcaence desk", docs_url=None, redoc_url=None, openapi_url=None)
+    on_shutdown = on_shutdown or tracing.flush
+
+    @asynccontextmanager
+    async def lifespan(_app):
+        yield
+        try:  # a stop (docker stop sends SIGTERM) must not lose the last traces; never blocks the exit
+            on_shutdown()
+        except Exception as exc:
+            log.warning("shutdown flush failed: %s", type(exc).__name__)
+
+    app = FastAPI(title="Arcaence desk", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 
     @app.exception_handler(RequestValidationError)
     async def invalid(_request, _exc):
