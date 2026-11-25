@@ -19,7 +19,7 @@ Three layers, one problem:
 | Part | Status |
 |---|---|
 | Phase 0: synthetic corpus, traps list, core golden set | Done |
-| RAG (ingestion, grounding, access control, evals, service) | In progress (ingestion, grounding, verified answers and access control done, gate G1 met) |
+| RAG (ingestion, grounding, access control, evals, service) | In progress (ingestion, grounding, verified answers and access control done, gate G1 met; evals in CI, review queue, service wrapper, container and tracing done, gate G3 met) |
 | MCP server | In progress (read tools, masking, fixed role, write tools, privacy tools, accessibility tool, policy server, resource and prompt, attack harness and Inspector evidence done) |
 | Multi-agent desk | Not started |
 
