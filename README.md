@@ -106,6 +106,8 @@ Findings from the ingestion work: [phase-1-ingestion.md](docs/build-logs/phase-1
 
 Findings from the Phase 2 work (in progress): [phase-2-answering.md](docs/build-logs/phase-2-answering.md).
 
+Findings from the RAG Phase 3 work: [rag-phase-3-evals-and-desk.md](docs/build-logs/rag-phase-3-evals-and-desk.md).
+
 ## Blogs
 
 Posts on the Arcaence blog that tell this project as a story. Each link is added when the post is published.
