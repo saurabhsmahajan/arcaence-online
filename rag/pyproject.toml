@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic>=2.8.0",
     "docx2txt>=0.9",
+    "fastapi>=0.165.0",
     "fastembed>=0.9.1",
     "langchain-community>=0.4.2",
     "langchain-core>=1.7.7",
@@ -18,4 +19,10 @@ dependencies = [
     "pypdfium2>=5.15.2",
     "pytesseract>=0.3.13",
     "python-dotenv>=1.2.4",
+    "uvicorn>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
 ]
