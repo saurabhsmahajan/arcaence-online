@@ -1,0 +1,23 @@
+# Secrets and local state never enter the image
+.env
+.env.*
+.venv
+__pycache__
+*.pyc
+.git
+.pytest_cache
+.ruff_cache
+
+# Tests, checks and tools are not part of the service
+test_*.py
+try_*.py
+check_*.py
+stability_check.py
+probe.py
+recall*.py
+scorer.py
+desk_scorer.py
+desk_scoring.py
+scripts
+Dockerfile
+.dockerignore
