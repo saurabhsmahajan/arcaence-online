@@ -1,4 +1,5 @@
 # Evaluation gate for the desk pipeline.
+# The offline job runs every test that needs no secrets and no database.
 # Fails the build when the unsupported-claim rate rises above eval/results/desk_baseline.json
 # or when any scored row errors. The classifier steps are report only.
 #
@@ -30,16 +31,30 @@ jobs:
   offline:
     name: offline tests (no secrets)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: rag
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: rag/uv.lock
+      - name: install dependencies
+        run: uv sync --frozen
       - name: desk logic tests
-        run: python rag/test_desk_logic.py
+        run: uv run python test_desk_logic.py
       - name: desk scoring tests
-        run: python rag/test_desk_scoring.py
+        run: uv run python test_desk_scoring.py
+      - name: case id tests
+        run: uv run python test_case.py
+      - name: handler tests
+        run: uv run python test_handler.py
+      - name: tracing tests (no message text may be exported)
+        run: uv run python test_tracing.py
+      - name: service tests (keys, limits, safe errors, shutdown)
+        run: uv run python test_service.py
 
   gate:
     name: classifier and desk gates
