@@ -107,6 +107,7 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
         trace_id = c.create_trace_id(seed=case_id)
         review = result.get("review", {})
         tri = result.get("triage", {})
+        bil = result.get("billing", {})
         summary = {
             "case_id": case_id,
             "behavior": result["behavior"],
@@ -127,6 +128,14 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
             "triage_dropped_facts": [str(x) for x in tri.get("dropped_facts", [])],
             "routing_queued": bool(tri.get("routing_queued")),
             "triage_error": tri.get("error", ""),
+            "billing_ran": bool(bil.get("ran")),
+            "billing_skipped": bil.get("skipped", ""),
+            "billing_outcome": bil.get("outcome", ""),
+            "billing_reason": bil.get("reason", ""),
+            "billing_steps": int(bil.get("steps", 0)),
+            "billing_would_refund": bool(bil.get("would_refund")),
+            "billing_would_queue": bool(bil.get("would_queue")),
+            "billing_error": bil.get("error", ""),
             "latency_ms": int(latency_ms),
         }
         with c.start_as_current_observation(
@@ -147,6 +156,13 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
                                       "specialist": summary["triage_specialist"],
                                       "fallback": summary["triage_fallback"],
                                       "routing_queued": summary["routing_queued"]}):
+                        pass
+                if summary["billing_ran"]:
+                    with c.start_as_current_observation(
+                            name="billing_shadow", as_type="span",
+                            metadata={"outcome": summary["billing_outcome"], "reason": summary["billing_reason"],
+                                      "steps": summary["billing_steps"], "would_refund": summary["billing_would_refund"],
+                                      "would_queue": summary["billing_would_queue"], "error": summary["billing_error"]}):
                         pass
                 if summary["route"] != "none":
                     with c.start_as_current_observation(

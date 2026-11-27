@@ -127,7 +127,7 @@ w = Watch(Tools([{"status": "preview", "token": "t"}, {"status": "done", "amount
 w.issue_refund("cust_001", "ord_1001", "19.00", "tos_v3", "3.3", True, None)
 check(w.commits == [], "a dry run is not a commit")
 w.issue_refund("cust_001", "ord_1001", "19.00", "tos_v3", "3.3", False, "t")
-check(w.commits == [{"status": "done", "reason": None, "amount": "19.00", "order_id": "ord_1001", "clause": "tos_v3 3.3"}],
+check(w.commits == [{"status": "done", "reason": None, "amount": "19.00", "currency": None, "order_id": "ord_1001", "clause": "tos_v3 3.3"}],
       "a commit is noted with what the server said and the clause that was cited")
 q_ = Queue()
 check(q_({"a": 1}) == 1 and q_({"a": 2}) == 2 and len(q_.items) == 2, "the stand-in queue keeps proposals and numbers them")

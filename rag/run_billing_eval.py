@@ -15,46 +15,12 @@ from pathlib import Path
 
 from billing import run_billing
 from billing_scoring import score_row, summarize
+from billing_shadow import Queue, Watch
 from case import new_case_id
 
 ROOT = Path(__file__).resolve().parent.parent
 GOLDEN = ROOT / "eval" / "golden_set_billing.csv"
 OUT = ROOT / "eval" / "results"
-
-
-class Watch:
-    """Wraps the tools and notes every commit that went through, so the score reads what happened to the money."""
-
-    def __init__(self, tools):
-        self._tools, self.commits = tools, []
-
-    def get_order(self, order_id):
-        return self._tools.get_order(order_id)
-
-    def get_account(self, customer_id):
-        return self._tools.get_account(customer_id)
-
-    def search_policy(self, query):
-        return self._tools.search_policy(query)
-
-    def issue_refund(self, customer_id, order_id, amount, clause_doc, clause_id, dry_run, confirm_token):
-        result = self._tools.issue_refund(customer_id, order_id, amount, clause_doc, clause_id, dry_run, confirm_token)
-        if not dry_run:
-            res = result if isinstance(result, dict) else {}
-            self.commits.append({"status": res.get("status"), "reason": res.get("reason"), "amount": res.get("amount"),
-                                 "order_id": res.get("order_id"), "clause": f"{clause_doc} {clause_id}"})
-        return result
-
-
-class Queue:
-    """Stands in for the review queue: keeps what would have been queued and hands back an id."""
-
-    def __init__(self):
-        self.items = []
-
-    def __call__(self, proposal):
-        self.items.append(proposal)
-        return len(self.items)
 
 
 def run_case(row, tools, create_fn=None):
