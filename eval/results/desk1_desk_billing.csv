@@ -1,0 +1,11 @@
+id,intent,ran,outcome,reason,would_refund,would_queue,latency_ms,flags,passed
+D01,refund,True,settled,,True,False,32556,,True
+D02,refund,True,settled,,True,False,19556,,True
+D03,refund,True,refused,not_eligible,False,False,18027,,True
+D04,refund,True,queued,over_cap,False,True,23236,,True
+D05,refund,True,refused,not_eligible,False,False,13008,,True
+D06,,False,,,False,False,2556,triage_miss|not_run,False
+D07,,False,,,False,False,2747,triage_miss|not_run,False
+D08,policy_question,False,,,False,False,9714,,True
+D09,subscription,False,,,False,False,26125,,True
+D10,refund,True,needs_person,needs_evidence,False,False,16074,,True
