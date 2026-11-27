@@ -22,9 +22,10 @@ ORDER_ID = re.compile(r"ord_[0-9]{4}")
 AMOUNT = re.compile(r"[0-9]{1,9}(\.[0-9]{1,2})?")
 CLAUSE_PART = re.compile(r"[a-z0-9_.]{1,40}")              # a document such as tos_v3, a clause such as 2.2
 LABEL = re.compile(r"[a-z_]{0,40}")                        # a reason code: lowercase words, never free text
+ERROR_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,59}")    # an exception class name, never its message
 
 # What the model may ask for. request_refund is one tool to the model; code turns it into a dry run and a commit.
-MODEL_TOOLS = ("search_policy", "get_order", "get_account", "request_refund")
+MODEL_TOOLS = ("search_policy", "get_order", "get_account", "request_refund", "close_case")
 # The tool names a step may carry in the record: what actually ran.
 STEP_TOOLS = ("search_policy", "get_order", "get_account", "issue_refund")
 STEP_STATUS = ("ok", "preview", "done", "refused", "error")
@@ -32,6 +33,12 @@ STEP_MODES = ("", "dry_run", "commit")
 MAX_STEPS = 8
 
 OUTCOMES = ("settled", "queued", "refused", "needs_person")
+
+# How the model itself may end a case with close_case: outcome -> the reasons it may give. Closed lists, no free text.
+AGENT_CLOSES = {
+    "refused": ("not_eligible",),
+    "needs_person": ("needs_evidence", "missing_details", "not_supported"),
+}
 
 # A refusal the customer should simply be told about. Nobody needs to look at it.
 CUSTOMER_REFUSALS = frozenset({
@@ -66,6 +73,12 @@ class CaseRecord:
         self.outcome = ""
         self.reason = ""
         self.item_id = None
+        self.error = ""
+
+    def check_budget(self, count: int = 1) -> None:
+        """Raise StepLimitReached if fewer than `count` steps are left. Call it BEFORE a tool runs."""
+        if len(self.steps) + count > self.max_steps:
+            raise StepLimitReached(f"fewer than {count} steps left of {self.max_steps}")
 
     def add_step(self, tool: str, status: str, reason: str = "", mode: str = "") -> dict:
         """Record one tool call that is about to count, or that just ran. Refuses the call past the limit."""
@@ -85,7 +98,7 @@ class CaseRecord:
         self.steps.append(step)
         return step
 
-    def finish(self, outcome: str, reason: str = "", item_id=None) -> None:
+    def finish(self, outcome: str, reason: str = "", item_id=None, error: str = "") -> None:
         if self.outcome:
             raise ValueError("the case is already finished")
         if outcome not in OUTCOMES:
@@ -98,19 +111,23 @@ class CaseRecord:
             raise ValueError("only a queued case has a queue item")
         if outcome != "settled" and not reason:
             raise ValueError("an outcome that is not settled needs a reason code")
+        if error and not (isinstance(error, str) and ERROR_NAME.fullmatch(error)):
+            raise ValueError("error must be an exception class name, never its message")
         self.outcome, self.reason, self.item_id = outcome, reason, (None if item_id is None else str(item_id))
+        self.error = error
 
     def to_dict(self) -> dict:
         return {
             "case_id": self.case_id, "customer_id": self.customer_id, "intent": self.intent,
             "steps": [dict(s) for s in self.steps], "outcome": self.outcome, "reason": self.reason,
-            "item_id": self.item_id,
+            "item_id": self.item_id, "error": self.error,
         }
 
     def trace_fields(self) -> dict:
         """What may go into a trace: labels and counts. No message text, no token, no amount."""
         return {"billing_outcome": self.outcome, "billing_reason": self.reason,
-                "billing_steps": len(self.steps), "billing_queued": self.outcome == "queued"}
+                "billing_steps": len(self.steps), "billing_queued": self.outcome == "queued",
+                "billing_error": self.error}
 
 
 def refund_args_problems(args) -> list[tuple[str, str]]:
@@ -137,6 +154,19 @@ def refund_args_problems(args) -> list[tuple[str, str]]:
         v = args.get(key)
         if v is not None and not (isinstance(v, str) and CLAUSE_PART.fullmatch(v)):
             out.append((key, f"{key} is not a plain document or clause label"))
+    return out
+
+
+def close_case_problems(args) -> list[tuple[str, str]]:
+    """(field, reason) for everything wrong with the model's close_case call. It may give an outcome and a reason, nothing else."""
+    if not isinstance(args, dict):
+        return [("shape", "arguments are not an object")]
+    out = [(k, "this argument is not the model's to give") for k in sorted(set(args) - {"outcome", "reason"})]
+    outcome, reason = args.get("outcome"), args.get("reason")
+    if outcome not in AGENT_CLOSES:
+        out.append(("outcome", "the model may close a case only as refused or needs_person"))
+    elif reason not in AGENT_CLOSES[outcome]:
+        out.append(("reason", f"reason is not one of the allowed reasons for {outcome}"))
     return out
 
 

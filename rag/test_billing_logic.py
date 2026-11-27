@@ -1,6 +1,6 @@
 """Tests for the billing contract. No model, no database, no MCP, no keys."""
-from billing_logic import (CUSTOMER_REFUSALS, MAX_STEPS, MODEL_TOOLS, OUTCOMES, QUEUE_REASONS, STEP_TOOLS,
-                           CaseRecord, StepLimitReached, next_after_dry_run, outcome_after_commit,
+from billing_logic import (AGENT_CLOSES, CUSTOMER_REFUSALS, MAX_STEPS, MODEL_TOOLS, OUTCOMES, QUEUE_REASONS, STEP_TOOLS,
+                           CaseRecord, StepLimitReached, close_case_problems, next_after_dry_run, outcome_after_commit,
                            refund_args_problems, refund_proposal)
 
 n = 0
@@ -93,13 +93,42 @@ check(set(OUTCOMES) == {"settled", "queued", "refused", "needs_person"}, "four o
 
 # what may go to a trace and what is in the record
 d = q.to_dict()
-check(set(d) == {"case_id", "customer_id", "intent", "steps", "outcome", "reason", "item_id"}, "record fields are fixed")
+check(set(d) == {"case_id", "customer_id", "intent", "steps", "outcome", "reason", "item_id", "error"}, "record fields are fixed")
 check("token" not in str(d).lower() and "message" not in str(d).lower(), "no token and no message text in the record")
-check(q.trace_fields() == {"billing_outcome": "queued", "billing_reason": "over_cap", "billing_steps": 0, "billing_queued": True},
-      "trace fields are labels and counts")
+check(q.trace_fields() == {"billing_outcome": "queued", "billing_reason": "over_cap", "billing_steps": 0, "billing_queued": True,
+                           "billing_error": ""}, "trace fields are labels and counts")
 check("amount" not in str(q.trace_fields()) and "customer" not in str(q.trace_fields()), "no amount and no customer id in a trace")
 d["steps"].append({"n": 9})
 check(q.steps == [], "to_dict returns a copy")
+
+# the budget check, before a tool runs
+b = rec(max_steps=3)
+b.check_budget(2)
+b.add_step("get_order", "ok")
+b.add_step("get_order", "ok")
+check(raises(StepLimitReached, b.check_budget, 2), "two steps do not fit when one is left")
+b.check_budget(1)
+check(len(b.steps) == 2, "a budget check records nothing")
+check("close_case" in MODEL_TOOLS and "close_case" not in STEP_TOOLS, "close_case is a model tool and is not a tool call that ran")
+
+# an error name on the record
+e = rec()
+e.finish("needs_person", "tool_error", error="TimeoutError")
+check(e.error == "TimeoutError" and e.to_dict()["error"] == "TimeoutError" and e.trace_fields()["billing_error"] == "TimeoutError", "an exception class name is kept")
+check(raises(ValueError, rec().finish, "needs_person", "tool_error", None, "connection refused for cust_001"), "an error message is not kept")
+check(raises(ValueError, rec().finish, "needs_person", "tool_error", None, "Error: 1"), "punctuation is not a class name")
+
+# how the model may close a case
+check(close_case_problems({"outcome": "refused", "reason": "not_eligible"}) == [], "refused with not_eligible")
+for why in AGENT_CLOSES["needs_person"]:
+    check(close_case_problems({"outcome": "needs_person", "reason": why}) == [], f"needs_person with {why}")
+check(close_case_problems({"outcome": "settled", "reason": ""}) != [], "the model cannot close a case as settled")
+check(close_case_problems({"outcome": "queued", "reason": "over_cap"}) != [], "the model cannot close a case as queued")
+check(close_case_problems({"outcome": "refused", "reason": "missing_details"}) != [], "a reason that belongs to another outcome")
+check(close_case_problems({"outcome": "refused", "reason": "Not eligible, sorry"}) != [], "free text as a reason")
+check(close_case_problems({"outcome": "refused", "reason": "not_eligible", "note": "hi"}) != [], "an extra argument")
+check(close_case_problems({"outcome": "refused"}) != [], "reason missing")
+check(close_case_problems("refused") != [], "not an object")
 
 # the model's arguments
 check(refund_args_problems(args()) == [], "plain refund request is fine")
