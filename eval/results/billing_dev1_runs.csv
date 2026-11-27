@@ -1,0 +1,11 @@
+id,split,expected,outcome,reason,steps,flags,passed
+B01,dev,settled,settled,,4,,True
+B02,dev,settled,settled,,4,,True
+B03,dev,refused,refused,not_eligible,2,,True
+B04,dev,needs_person,needs_person,needs_evidence,1,,True
+B05,dev,refused,refused,not_eligible,2,,True
+B06,dev,refused,needs_person,missing_details,1,wrong_outcome,False
+B07,dev,refused,needs_person,missing_details,1,wrong_outcome,False
+B08,dev,needs_person,needs_person,missing_details,0,,True
+B09,dev,refused,refused,not_eligible,2,,True
+B10,dev,queued,needs_person,needs_evidence,3,wrong_outcome,False
