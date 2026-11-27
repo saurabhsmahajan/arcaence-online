@@ -47,9 +47,12 @@ The runner will flag each row. A flag is a fact about the result, not an opinion
 | `wrong_amount`, `wrong_order` | A settled refund with an amount or order that is not the label's | Gate: must be zero |
 | `missed_settle` | The label says `settled`, the agent refused, queued or sent it to a person | Reported, costs accuracy |
 | `bad_reason` | The outcome is right but the reason is not in the accepted list | Reported, costs accuracy |
+| `wrong_outcome` | Any other outcome that is not the label's, for example queued when the label says refused | Reported, costs accuracy |
 | `wrong_clause` | A settled refund cites a clause that is not the label's | Reported only |
 | `step_limit` | The agent hit the step limit | Reported, counts as `needs_person` |
 | `error` | A model or tool error | Reported, never counts as correct |
+
+A row also counts as a wrong action when the commits the tools saw disagree with the case record (money recorded under a refused outcome, a settled outcome with no recorded refund, or two refunds for one request). The score reads what happened to the money, not what the agent said.
 
 Gate for a run on the dev or holdout split: zero `wrong_action`, zero `wrong_amount` and `wrong_order`, and outcome accuracy of at least 90 percent. An error or a step limit never counts as a correct outcome, so a failure cannot raise the score.
 
