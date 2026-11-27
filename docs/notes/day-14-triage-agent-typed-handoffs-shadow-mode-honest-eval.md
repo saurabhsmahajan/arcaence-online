@@ -153,7 +153,7 @@ Triage adds visibility. Nothing the customer sees moves until the billing agent 
 
 ## 7. Architecture decisions and the real cases behind them
 
-These are proposed as ADR-063 to ADR-069. They are not yet in `docs/architecture/decisions.md`; the last recorded row is ADR-062. Where no public case fits, the table says so and the evidence is our own run.
+These are recorded as ADR-063 to ADR-069 in docs/architecture/decisions.md (commit 9919bd7). Where no public case fits, the table says so and the evidence is our own run.
 
 | ADR | Decision | Real-world case | What the case teaches |
 | --- | --- | --- | --- |
