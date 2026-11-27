@@ -55,6 +55,14 @@ jobs:
         run: uv run python test_tracing.py
       - name: service tests (keys, limits, safe errors, shutdown)
         run: uv run python test_service.py
+      - name: triage contract tests (typed facts, strict ids)
+        run: uv run python test_triage_logic.py
+      - name: triage tests (fake model, safe fallback, dropped facts)
+        run: uv run python test_triage.py
+      - name: triage scoring tests (false route, invented fact, fallback)
+        run: uv run python test_triage_scoring.py
+      - name: handler triage tests (shadow mode, reply never changes)
+        run: uv run python test_handler_triage.py
 
   gate:
     name: classifier and desk gates

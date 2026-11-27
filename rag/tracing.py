@@ -106,6 +106,7 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
         case_id = result["case_id"]
         trace_id = c.create_trace_id(seed=case_id)
         review = result.get("review", {})
+        tri = result.get("triage", {})
         summary = {
             "case_id": case_id,
             "behavior": result["behavior"],
@@ -119,6 +120,13 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
             "handoff_needed": bool(result.get("handoff", {}).get("needed")),
             "review_queued": bool(review.get("queued")),
             "review_error": review.get("error", ""),
+            "triage_ran": bool(tri.get("ran")),
+            "triage_intent": tri.get("intent", ""),
+            "triage_specialist": tri.get("specialist", ""),
+            "triage_fallback": tri.get("fallback_reason", ""),
+            "triage_dropped_facts": [str(x) for x in tri.get("dropped_facts", [])],
+            "routing_queued": bool(tri.get("routing_queued")),
+            "triage_error": tri.get("error", ""),
             "latency_ms": int(latency_ms),
         }
         with c.start_as_current_observation(
@@ -132,6 +140,14 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
                                   "confidence": summary["classifier_confidence"],
                                   "note": summary["classifier_note"]}):
                     pass
+                if summary["triage_ran"]:
+                    with c.start_as_current_observation(
+                            name="triage", as_type="span",
+                            metadata={"intent": summary["triage_intent"],
+                                      "specialist": summary["triage_specialist"],
+                                      "fallback": summary["triage_fallback"],
+                                      "routing_queued": summary["routing_queued"]}):
+                        pass
                 if summary["route"] != "none":
                     with c.start_as_current_observation(
                             name="answer", as_type="span",

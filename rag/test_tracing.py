@@ -97,6 +97,36 @@ check("a broken client returns None", tracing.record_case(result, 1, client=Brok
 check("a malformed result returns None", tracing.record_case({}, 1, client=client) is None)
 tracing.use_client(None)
 check("with tracing off, nothing happens", tracing.record_case(result, 1) is None)
+# --- triage fields: labels and flags only, never the message
+exporter.clear()
+triaged = {**result, "case_id": "case_20261127_0123456789ab",
+           "triage": {"ran": True, "intent": "refund", "specialist": "billing", "fallback": False,
+                      "fallback_reason": "", "dropped_facts": ["order_id"], "routing_queued": True,
+                      "item_id": "33333333-3333-3333-3333-333333333333", "error": ""}}
+tid = tracing.record_case(triaged, 50, client=client)
+spans = spans_text()
+blob = json.dumps(spans)
+check("a triage span is exported when triage ran", any(s["name"] == "triage" for s in spans))
+check("the triage intent and specialist are in the trace", "refund" in blob and "billing" in blob)
+check("the routing flag is in the trace", "routing_queued" in blob)
+check("dropped fact names are in the trace", "order_id" in blob)
+check("the queue item id is NOT in the trace", "33333333" not in blob)
+check("the customer's message is NOT in the triage trace", "4417" not in blob and "Rahul" not in blob and "lawyer" not in blob)
+
+exporter.clear()
+tracing.record_case({**result, "case_id": "case_20261127_0123456789ac"}, 5, client=client)
+spans = spans_text()
+check("no triage span when triage did not run", not any(s["name"] == "triage" for s in spans))
+
+exporter.clear()
+failed = {**result, "case_id": "case_20261127_0123456789ad",
+          "triage": {"ran": True, "intent": "policy_question", "specialist": "none", "fallback": True,
+                     "fallback_reason": "error: JSONDecodeError (stop=max_tokens, len=0)", "dropped_facts": [],
+                     "routing_queued": False, "item_id": None, "error": ""}}
+tracing.record_case(failed, 5, client=client)
+blob = json.dumps(spans_text())
+check("a triage fallback reason is visible in the trace", "JSONDecodeError" in blob and "max_tokens" in blob)
+
 tracing.flush()
 check("flush with no client does not raise", True)
 

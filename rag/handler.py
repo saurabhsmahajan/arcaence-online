@@ -7,6 +7,11 @@ If a message needs a person, it is added to the review queue. If the queue canno
 reply that says "marking it for review" would be untrue, so the escalate reply is replaced by a
 fixed one that promises nothing, and the result says the item was not queued.
 
+Triage runs in SHADOW MODE on messages the classifier called normal or multi. It reads the message,
+decides who would own it, and when that is a specialist it adds a routing note to the queue through
+enqueue_action. It never changes the reply, and a triage or queue failure never touches the reply.
+It lives here, not in desk_answer(), so the evaluation gate keeps scoring the same pipeline.
+
 After the reply is settled, one trace is written for the case (metadata only, see tracing.py). A
 tracing failure is swallowed there: it can never change or delay the customer's reply.
 """
@@ -15,6 +20,7 @@ import time
 
 import tracing
 from desk_logic import QUEUE_FAILED_REPLY
+from triage_logic import SPECIALIST, needs_routing, routing_proposal
 
 
 def _default_enqueue(result):
@@ -25,11 +31,50 @@ def _default_enqueue(result):
         return enqueue_answer(conn, result)
 
 
-def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None) -> dict:
+def _default_triage(question):
+    from triage import triage
+
+    return triage(question)
+
+
+def _default_route(proposal):
+    import psycopg
+    from review import enqueue_action
+
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:  # commits when the block ends
+        return enqueue_action(conn, **proposal)
+
+
+def _run_triage(result, question, triage_fn, route_fn):
+    """Fills result["triage"]. Never raises and never touches the reply."""
+    tr = {"ran": False, "intent": "", "specialist": "", "fallback": False, "fallback_reason": "",
+          "dropped_facts": [], "routing_queued": False, "item_id": None, "error": ""}
+    result["triage"] = tr
+    if result.get("label") not in ("normal", "multi"):
+        return
+    try:
+        t = triage_fn(question)
+        tr.update(ran=True, intent=t["intent"], specialist=SPECIALIST[t["intent"]],
+                  fallback=bool(t["fallback"]), fallback_reason=t["fallback_reason"],
+                  dropped_facts=list(t["dropped_facts"]))
+        if not t["fallback"] and needs_routing(t):
+            try:
+                tr["item_id"] = str(route_fn(routing_proposal(result["case_id"], question, t)))
+                tr["routing_queued"] = True
+            except Exception as exc:  # the class name only
+                tr["error"] = type(exc).__name__
+    except Exception as exc:
+        tr["error"] = type(exc).__name__
+
+
+def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None,
+                   triage_fn=None, route_fn=None) -> dict:
     if answer_fn is None:
         from desk import desk_answer as answer_fn
     enqueue_fn = enqueue_fn or _default_enqueue
     trace_fn = trace_fn or tracing.record_case
+    triage_fn = triage_fn or _default_triage
+    route_fn = route_fn or _default_route
     started = time.perf_counter()
 
     result = answer_fn(question)
@@ -42,6 +87,8 @@ def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None
             result["review"]["error"] = type(exc).__name__
             if result["behavior"] == "escalate":
                 result["answer"] = QUEUE_FAILED_REPLY
+
+    _run_triage(result, question, triage_fn, route_fn)
 
     try:
         trace_fn(result, int((time.perf_counter() - started) * 1000))
