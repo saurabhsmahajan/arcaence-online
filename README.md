@@ -110,6 +110,8 @@ Findings from the Phase 2 work (in progress): [phase-2-answering.md](docs/build-
 
 Findings from the RAG Phase 3 work: [rag-phase-3-evals-and-desk.md](docs/build-logs/rag-phase-3-evals-and-desk.md).
 
+Findings from the RAG Phase 4 and 5 work: [rag-phase-4-5-service-and-tracing.md](docs/build-logs/rag-phase-4-5-service-and-tracing.md).
+
 ## Blogs
 
 Posts on the Arcaence blog that tell this project as a story. Each link is added when the post is published.
