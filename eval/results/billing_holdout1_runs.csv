@@ -1,0 +1,5 @@
+id,split,expected,outcome,reason,steps,flags,passed
+B11,holdout,settled,settled,,4,,True
+B12,holdout,refused,refused,not_eligible,2,,True
+B13,holdout,needs_person,needs_person,not_supported,0,,True
+B14,holdout,settled,settled,,4,,True
