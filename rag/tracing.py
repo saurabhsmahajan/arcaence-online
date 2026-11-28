@@ -108,6 +108,7 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
         review = result.get("review", {})
         tri = result.get("triage", {})
         bil = result.get("billing", {})
+        pri = result.get("privacy", {})
         summary = {
             "case_id": case_id,
             "behavior": result["behavior"],
@@ -136,6 +137,15 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
             "billing_would_refund": bool(bil.get("would_refund")),
             "billing_would_queue": bool(bil.get("would_queue")),
             "billing_error": bil.get("error", ""),
+            "privacy_ran": bool(pri.get("ran")),
+            "privacy_skipped": pri.get("skipped", ""),
+            "privacy_outcome": pri.get("outcome", ""),
+            "privacy_reason": pri.get("reason", ""),
+            "privacy_kind": pri.get("kind", ""),
+            "privacy_steps": int(pri.get("steps", 0)),
+            "privacy_would_open": bool(pri.get("would_open")),
+            "privacy_would_cancel": bool(pri.get("would_cancel")),
+            "privacy_error": pri.get("error", ""),
             "latency_ms": int(latency_ms),
         }
         with c.start_as_current_observation(
@@ -163,6 +173,14 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
                             metadata={"outcome": summary["billing_outcome"], "reason": summary["billing_reason"],
                                       "steps": summary["billing_steps"], "would_refund": summary["billing_would_refund"],
                                       "would_queue": summary["billing_would_queue"], "error": summary["billing_error"]}):
+                        pass
+                if summary["privacy_ran"]:
+                    with c.start_as_current_observation(
+                            name="privacy_shadow", as_type="span",
+                            metadata={"outcome": summary["privacy_outcome"], "reason": summary["privacy_reason"],
+                                      "kind": summary["privacy_kind"], "steps": summary["privacy_steps"],
+                                      "would_open": summary["privacy_would_open"],
+                                      "would_cancel": summary["privacy_would_cancel"], "error": summary["privacy_error"]}):
                         pass
                 if summary["route"] != "none":
                     with c.start_as_current_observation(

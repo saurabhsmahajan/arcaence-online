@@ -16,6 +16,10 @@ Billing runs in SHADOW MODE too (BILLING_MODE=shadow), only when triage says ref
 gave a customer id. It runs the billing agent on a rolled-back transaction, records the outcome and a
 preview of the words, and changes nothing: not the reply, not the database, not the queue.
 
+Privacy runs in SHADOW MODE the same way (PRIVACY_MODE=shadow), only when triage says privacy and the trusted caller
+gave a customer id. It records what it would have opened or cancelled, read from the request tables on a
+rolled-back transaction, and a preview of the words. It changes nothing: not the reply, not the database, not the queue.
+
 After the reply is settled, one trace is written for the case (metadata only, see tracing.py). A
 tracing failure is swallowed there: it can never change or delay the customer's reply.
 """
@@ -26,6 +30,7 @@ import tracing
 from billing_logic import CUSTOMER_ID
 from billing_reply import billing_reply
 from desk_logic import QUEUE_FAILED_REPLY
+from privacy_reply import privacy_reply
 from triage_logic import SPECIALIST, needs_routing, routing_proposal
 
 
@@ -55,6 +60,36 @@ def _default_billing():
     from billing_shadow import default_billing_fn
 
     return default_billing_fn()
+
+
+def _default_privacy():
+    from privacy_shadow import default_privacy_fn
+
+    return default_privacy_fn()
+
+
+def _run_privacy_shadow(result, question, customer_id, privacy_fn):
+    """Fills result["privacy"]. Never raises and never touches the reply."""
+    p = {"ran": False, "mode": "shadow" if privacy_fn else "off", "skipped": "", "outcome": "", "reason": "", "kind": "",
+         "steps": 0, "would_open": False, "would_cancel": False, "preview": "", "error": ""}
+    result["privacy"] = p
+    tri = result.get("triage", {})
+    if privacy_fn is None:
+        p["skipped"] = "off"
+    elif not tri.get("ran") or tri.get("fallback") or tri.get("intent") != "privacy":
+        p["skipped"] = "not_privacy"
+    elif not (isinstance(customer_id, str) and CUSTOMER_ID.fullmatch(customer_id)):
+        p["skipped"] = "no_customer"    # the id comes from the caller; a message never supplies one
+    else:
+        try:
+            out = privacy_fn(question, result["case_id"], customer_id)
+            rec, fx = out["record"], out.get("effects", [])
+            p.update(ran=True, outcome=rec.get("outcome") or "", reason=rec.get("reason") or "", kind=rec.get("kind") or "",
+                     steps=len(rec.get("steps", [])), would_open=any(e.get("change") == "opened" for e in fx),
+                     would_cancel=any(e.get("change") == "cancelled" for e in fx),
+                     preview=privacy_reply(rec, queued=True), error=str(rec.get("error") or ""))
+        except Exception as exc:  # the class name only
+            p["error"] = type(exc).__name__
 
 
 def _run_billing_shadow(result, question, customer_id, billing_fn):
@@ -103,7 +138,7 @@ def _run_triage(result, question, triage_fn, route_fn):
 
 
 def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None,
-                   triage_fn=None, route_fn=None, customer_id=None, billing_fn=None) -> dict:
+                   triage_fn=None, route_fn=None, customer_id=None, billing_fn=None, privacy_fn=None) -> dict:
     if answer_fn is None:
         from desk import desk_answer as answer_fn
     enqueue_fn = enqueue_fn or _default_enqueue
@@ -111,6 +146,7 @@ def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None
     triage_fn = triage_fn or _default_triage
     route_fn = route_fn or _default_route
     billing_fn = billing_fn or _default_billing()
+    privacy_fn = privacy_fn or _default_privacy()
     started = time.perf_counter()
 
     result = answer_fn(question)
@@ -126,6 +162,7 @@ def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None
 
     _run_triage(result, question, triage_fn, route_fn)
     _run_billing_shadow(result, question, customer_id, billing_fn)
+    _run_privacy_shadow(result, question, customer_id, privacy_fn)
 
     try:
         trace_fn(result, int((time.perf_counter() - started) * 1000))
