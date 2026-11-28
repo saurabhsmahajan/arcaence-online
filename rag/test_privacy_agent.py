@@ -2,8 +2,8 @@
 import copy
 import json
 
-import privacy
-from privacy import MAX_RESULT_CHARS, MAX_TURNS, SYSTEM, TOOLS, run_privacy
+import privacy_agent
+from privacy_agent import MAX_RESULT_CHARS, MAX_TURNS, SYSTEM, TOOLS, run_privacy
 from privacy_logic import ACTION_TOOLS, AGENT_CLOSES, MODEL_TOOLS
 
 n = 0
@@ -99,7 +99,7 @@ m, t = Model(Reply(use(1, DELETE))), Tools(**{DELETE: OK_DELETE})
 r = run(m, t)
 check(r.outcome == "requested" and r.kind == "deletion" and r.request_id == RID, "a deletion request is opened")
 check(t.log == [(DELETE, CUST)], "the tool was called once, with the case's customer id")
-check(len(m.sent) == 1 and m.sent[0]["model"] == privacy.MODEL and m.sent[0]["tools"] == TOOLS, "one model call with the fixed tools")
+check(len(m.sent) == 1 and m.sent[0]["model"] == privacy_agent.MODEL and m.sent[0]["tools"] == TOOLS, "one model call with the fixed tools")
 check(m.sent[0]["system"] == SYSTEM and CUST not in m.sent[0]["system"], "the system prompt is fixed and holds no customer")
 check(m.sent[0]["messages"] == [{"role": "user", "content": f"Customer message: {MESSAGE}"}], "the message goes in as user data")
 m, t = Model(Reply(use(1, EXPORT))), Tools(**{EXPORT: OK_EXPORT})
@@ -167,7 +167,7 @@ m, t = Model(Reply(use(1, DELETE))), Tools(**{DELETE: OK_DELETE})
 check(run(m, t, max_steps=1).outcome == "requested", "the default limit allows the one action")
 
 # what the model is shown and what is kept
-check(MAX_RESULT_CHARS <= 2000 and privacy._show({"a": "x" * 5000}) .__len__() == MAX_RESULT_CHARS, "a tool result is cut to a fixed length")
+check(MAX_RESULT_CHARS <= 2000 and privacy_agent._show({"a": "x" * 5000}) .__len__() == MAX_RESULT_CHARS, "a tool result is cut to a fixed length")
 m, t = Model(Reply(use(1, DELETE))), Tools(**{DELETE: OK_DELETE})
 r = run(m, t)
 check(MESSAGE not in str(r.to_dict()) and "secret.person" not in str(r.to_dict()), "the message is not in the record")
