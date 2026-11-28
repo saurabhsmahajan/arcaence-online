@@ -63,6 +63,25 @@ jobs:
         run: uv run python test_triage_scoring.py
       - name: handler triage tests (shadow mode, reply never changes)
         run: uv run python test_handler_triage.py
+      # Billing and privacy agents: fake model, fake tools, no secrets and no database. Each loop stops at the first failing file.
+      - name: billing agent tests (logic, flow, loop, tools, replies, scoring, golden set, shadow mode)
+        run: |
+          for t in test_billing_logic test_billing_flow test_billing test_billing_tools test_billing_reply test_billing_scoring test_billing_golden test_billing_shadow; do
+            echo "== $t"
+            uv run python $t.py || exit 1
+          done
+      - name: privacy agent tests (logic, flow, loop, replies, scoring, shadow mode)
+        run: |
+          for t in test_privacy_logic test_privacy_flow test_privacy_agent test_privacy_reply test_privacy_scoring test_privacy_shadow; do
+            echo "== $t"
+            uv run python $t.py || exit 1
+          done
+      - name: desk cases and human gate tests (case files, scorers, queue switch, owner decisions)
+        run: |
+          for t in test_desk_billing test_desk_privacy test_human_gate_handler test_review_decide; do
+            echo "== $t"
+            uv run python $t.py || exit 1
+          done
 
   gate:
     name: classifier and desk gates
