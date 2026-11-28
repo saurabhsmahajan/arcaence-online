@@ -112,6 +112,9 @@ check(raises(ValueError, rec().finish, "settled", ""), "settled is a billing out
 check(raises(ValueError, rec().finish, "needs_person", "not_supported", None, None, "bad error text!"), "error is a class name only")
 r = rec(); r.finish("needs_person", "not_supported", error="TimeoutError"); check(r.error == "TimeoutError", "an error class is kept")
 r = rec(); r.finish("needs_person", "step_limit"); check(r.reason == "step_limit", "step_limit is allowed")
+for why in ("model_error", "model_truncated", "no_decision", "turn_limit"):
+    r = rec(); r.finish("needs_person", why, error="APIError" if why == "model_error" else "")
+    check(r.reason == why and r.request_id is None, f"the model loop may end a case as {why}")
 r = rec(); r.add_step(DELETE, "error"); r.finish("needs_person", "tool_error", error="OperationalError")
 check(r.reason == "tool_error" and r.error == "OperationalError" and r.request_id is None, "a tool that raised ends as needs_person")
 check(raises(ValueError, r.finish, "needs_person", "not_supported"), "a case finishes once")

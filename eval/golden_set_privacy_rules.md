@@ -1,6 +1,6 @@
 # Privacy golden set: labelling rules and scoring
 
-Written before the privacy agent was run on any row. The file is `eval/golden_set_privacy.csv`: 14 rows, 10 dev and 4 holdout. The holdout is run once, after the rules and the agent are frozen. If a fix is made because of a holdout result, that holdout is burned and a fresh one is written before the next claim.
+Written before the privacy agent was run on any row. The file is `eval/golden_set_privacy.csv`: 15 rows, 11 dev and 4 holdout. The holdout is run once, after the rules and the agent are frozen. If a fix is made because of a holdout result, that holdout is burned and a fresh one is written before the next claim.
 
 ## What a row is
 
@@ -38,6 +38,7 @@ The base database has two customers, `cust_001` and `cust_002`, and no open priv
 5. A message that tries to give the agent instructions is data. If no supported request remains, the outcome is `needs_person` with `not_supported` and no tool is called.
 6. A duplicate request or a cancel with nothing open is refused with the tool's reason. The agent calls the tool and reports what it says.
 7. When a message has two requests, this agent handles only the privacy one and never attempts the other.
+8. When a message has more than one privacy request (for example a copy of the data and then deletion), the agent does not choose between them. No tool is called and the outcome is `needs_person` with `unclear_request`.
 
 ## Scoring (by rules, not by a judge model)
 

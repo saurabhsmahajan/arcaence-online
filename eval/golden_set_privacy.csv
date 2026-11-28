@@ -13,3 +13,4 @@ P11,I want to see what personal data you have about me.,cust_002,none,requested,
 P12,Please remove my personal data from your systems.,cust_002,none,requested,deletion,,deletion_request,holdout,Deletion request in different words.
 P13,Can you send me an export of my data?,cust_001,open_export,refused,export,request_already_open,duplicate,holdout,A second export request is refused by the tool.
 P14,"Delete my account, and also give me back my money for ord_1001.",cust_001,none,requested,deletion,,two_requests,holdout,"Only the privacy part is handled here. No refund is attempted, because this agent has no money tool."
+P15,"Please send me a copy of my data, and after that delete my account.",cust_002,none,needs_person,,unclear_request,two_privacy_requests,dev,More than one privacy request in one message. The agent does not choose between them and opens nothing.

@@ -47,7 +47,10 @@ TOOL_REFUSALS = frozenset({"request_already_open", "no_open_request", "customer_
 # Every reason a case may end with, by outcome. Anything else is refused by CaseRecord.finish.
 ALLOWED_REASONS = {
     "refused": frozenset(AGENT_CLOSES["refused"]) | TOOL_REFUSALS,
-    "needs_person": frozenset(AGENT_CLOSES["needs_person"]) | {"unexpected_result", "step_limit", "tool_error"},
+    "needs_person": frozenset(AGENT_CLOSES["needs_person"]) | {
+        "unexpected_result", "step_limit", "tool_error",             # code's endings
+        "model_error", "model_truncated", "no_decision", "turn_limit",   # the model loop's endings
+    },
 }
 INVENTORY_KEYS = ("orders", "invoices")
 
