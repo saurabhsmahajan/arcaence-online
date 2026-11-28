@@ -18,6 +18,7 @@ from case import new_case_id
 from classifier import classify
 from desk_logic import (FALLBACK_CLARIFY, HOSTILE_REPLY, PARTS_SCHEMA, PARTS_SYSTEM,
                         compose_parts, parts_problems)
+from desk_safe import NO_SOURCES_REPLY, UNVERIFIED_REPLY
 from retrieval import expand_references, price_lookup, route, vector_search
 
 
@@ -89,12 +90,17 @@ def desk_answer(question: str) -> dict:
                    handoff={"needed": True, "reason": "hostile"})
     else:  # normal and multi
         path, labels, lines = gather(question)
+        if not lines:  # nothing to answer from: code decides, the model is never asked
+            out.update(route=path, behavior="refuse", answer=NO_SOURCES_REPLY, refused=True,
+                       refusal_reason="no_sources",
+                       handoff={"needed": True, "reason": "no_sources"})
+            return out
         user = "Sources:\n" + "\n".join(lines) + f"\n\nQuestion: {question}"
         res = parts_with_retry(user, labels)
         out.update(route=path, sources=sorted(labels), attempts=res["attempts"],
                    attempt_log=res["log"])
         if res["result"] is None:
-            out.update(behavior="refuse", answer="NOT_FOUND", refused=True,
+            out.update(behavior="refuse", answer=UNVERIFIED_REPLY, refused=True,
                        refusal_reason="verification_failed",
                        handoff={"needed": True, "reason": "verification_failed"})
         else:

@@ -1,0 +1,13 @@
+id,fault,expect_behavior,expect_reason,expect_handoff,expect_model_called,notes
+FD01,none,answer,,no,yes,baseline: a normal covered answer passes through untouched
+FD02,classifier_down,refuse,unavailable_model_error,yes,no,the classifier model fails before anything else
+FD03,model_down,refuse,unavailable_model_error,yes,yes,the answer model fails after sources were gathered
+FD04,model_slow,refuse,unavailable_timeout,yes,yes,the answer model hangs past the deadline
+FD05,db_down,refuse,unavailable_retrieval_error,yes,no,retrieval raises a database error
+FD06,db_slow,refuse,unavailable_timeout,yes,no,retrieval hangs past the deadline
+FD07,no_sources,refuse,no_sources,yes,no,retrieval returns nothing so the model is never asked
+FD08,irrelevant_sources,refuse,no_part_covered,no,yes,sources exist but do not cover the question: the model says not covered and fixed words are used
+FD09,unverified,refuse,verification_failed,yes,yes,the model never produced a verifiable answer: fixed reply and not the literal NOT_FOUND
+FD10,bad_shape,refuse,unavailable_unexpected_error,yes,yes,the model result lacks required fields
+FD11,db_secret,refuse,unavailable_retrieval_error,yes,no,the database error text holds a connection string that must never reach the reply
+FD12,model_text,refuse,unavailable_model_error,yes,yes,the model error text holds instructions that must never reach the reply
