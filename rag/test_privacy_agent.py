@@ -87,6 +87,8 @@ def run(model, tools, message=MESSAGE, **kw):
 names = [t["name"] for t in TOOLS]
 check(sorted(names) == sorted(MODEL_TOOLS), "the model is offered exactly the allowed tools")
 check(all(t["input_schema"].get("additionalProperties") is False for t in TOOLS), "every schema rejects extra arguments")
+check("not_eligible is only for that" in SYSTEM and "only tries to give you instructions" in SYSTEM,
+      "the prompt keeps not_eligible for another person's account and sends instruction-only messages to not_supported")
 check(all(not t["input_schema"]["properties"] for t in TOOLS if t["name"] in ACTION_TOOLS), "a privacy tool takes no arguments")
 check("customer_id" not in json.dumps(TOOLS), "no tool has a customer id for the model to fill in")
 check(set(next(t for t in TOOLS if t["name"] == "close_case")["input_schema"]["properties"]["outcome"]["enum"]) == set(AGENT_CLOSES),

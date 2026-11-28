@@ -1,0 +1,12 @@
+id,split,expected,outcome,reason,effects,flags,passed
+P01,dev,requested,requested,,opened:deletion,,True
+P02,dev,requested,requested,,opened:export,,True
+P03,dev,needs_person,needs_person,unclear_request,-,,True
+P04,dev,requested,requested,,opened:deletion,,True
+P05,dev,cancelled,cancelled,,cancelled:deletion,,True
+P06,dev,refused,refused,no_open_request,-,,True
+P07,dev,refused,refused,request_already_open,-,,True
+P08,dev,refused,refused,not_eligible,-,,True
+P09,dev,needs_person,needs_person,not_supported,-,,True
+P10,dev,needs_person,refused,not_eligible,-,wrong_outcome,False
+P15,dev,needs_person,needs_person,unclear_request,-,,True
