@@ -78,7 +78,7 @@ jobs:
           done
       - name: desk cases and human gate tests (case files, scorers, queue switch, owner decisions)
         run: |
-          for t in test_desk_billing test_desk_privacy test_human_gate_handler test_review_decide; do
+          for t in test_desk_billing test_desk_privacy test_human_gate_handler test_review_decide test_desk_safe test_failure_drills test_handler_faults; do
             echo "== $t"
             uv run python $t.py || exit 1
           done

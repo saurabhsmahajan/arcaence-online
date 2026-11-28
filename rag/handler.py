@@ -165,7 +165,7 @@ def _run_triage(result, question, triage_fn, route_fn):
 def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None,
                    triage_fn=None, route_fn=None, customer_id=None, billing_fn=None, privacy_fn=None, proposal_fn=None) -> dict:
     if answer_fn is None:
-        from desk import desk_answer as answer_fn
+            from desk_safe import safe_desk_answer as answer_fn
     enqueue_fn = enqueue_fn or _default_enqueue
     trace_fn = trace_fn or tracing.record_case
     triage_fn = triage_fn or _default_triage
