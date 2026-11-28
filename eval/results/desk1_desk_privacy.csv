@@ -1,0 +1,17 @@
+id,intent,ran,outcome,reason,would_open,would_cancel,billing_ran,latency_ms,flags,passed
+DP01,privacy,True,requested,,True,False,False,22886,,True
+DP02,privacy,True,requested,,True,False,False,10089,,True
+DP03,,False,,,False,False,False,1173,triage_miss|not_run,False
+DP04,privacy,True,cancelled,,False,True,False,10861,,True
+DP05,privacy,True,refused,no_open_request,False,False,False,11877,,True
+DP06,privacy,True,refused,request_already_open,False,False,False,12594,,True
+DP07,policy_question,False,,,False,False,False,8808,,True
+DP08,privacy,True,refused,not_eligible,False,False,False,11154,,True
+DP09,account,False,,,False,False,False,7065,,True
+DP10,,False,,,False,False,False,3687,,True
+DP11,privacy,True,requested,,True,False,False,15296,,True
+DP12,privacy,True,needs_person,unclear_request,False,False,False,13781,,True
+DP13,,False,,,False,False,False,3174,,True
+DP14,account,False,,,False,False,False,7779,,True
+DP15,subscription,False,,,False,False,False,11776,,True
+DP16,refund,False,,,False,False,True,7782,,True

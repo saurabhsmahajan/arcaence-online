@@ -21,12 +21,14 @@ from privacy_tools import PrivacyWatch
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def shadow_privacy(question, case_id, customer_id, tools, create_fn=None) -> dict:
+def shadow_privacy(question, case_id, customer_id, tools, create_fn=None, setup="none") -> dict:
     """One shadow run. `tools` has case() and snapshot() (PrivacyLocalTools), and case() always rolls back.
+    `setup` (none, open_deletion, open_export) is for the desk cases only: it opens a request first, inside the same
+    rolled-back transaction, so a "cancel" or "duplicate" case has something to meet. The handler never passes it.
     Returns {"record": CaseRecord dict, "effects": what would have changed, "calls": the tool calls made}.
     The customer id comes from the caller, never from the message."""
     watched = PrivacyWatch(tools)
-    with tools.case():
+    with tools.case(setup, customer_id):
         before = tools.snapshot()
         rec = run_privacy(question, case_id, customer_id, watched, create_fn=create_fn)
         fx = effects(before, tools.snapshot())
