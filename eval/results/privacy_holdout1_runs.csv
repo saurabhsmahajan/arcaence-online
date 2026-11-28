@@ -1,0 +1,6 @@
+id,split,expected,outcome,reason,effects,flags,passed
+P11,holdout,requested,requested,,opened:export,,True
+P12,holdout,requested,requested,,opened:deletion,,True
+P13,holdout,refused,refused,request_already_open,-,,True
+P14,holdout,requested,requested,,opened:deletion,,True
+P16,holdout,needs_person,needs_person,not_supported,-,,True
