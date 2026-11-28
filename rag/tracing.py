@@ -137,6 +137,8 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
             "billing_would_refund": bool(bil.get("would_refund")),
             "billing_would_queue": bool(bil.get("would_queue")),
             "billing_error": bil.get("error", ""),
+            "billing_proposal_queued": bool(bil.get("proposal_queued")),
+            "billing_proposal_error": bil.get("proposal_error", ""),
             "privacy_ran": bool(pri.get("ran")),
             "privacy_skipped": pri.get("skipped", ""),
             "privacy_outcome": pri.get("outcome", ""),
@@ -172,7 +174,9 @@ def record_case(result: dict, latency_ms: int, client=None) -> str | None:
                             name="billing_shadow", as_type="span",
                             metadata={"outcome": summary["billing_outcome"], "reason": summary["billing_reason"],
                                       "steps": summary["billing_steps"], "would_refund": summary["billing_would_refund"],
-                                      "would_queue": summary["billing_would_queue"], "error": summary["billing_error"]}):
+                                      "would_queue": summary["billing_would_queue"], "error": summary["billing_error"],
+                                      "proposal_queued": summary["billing_proposal_queued"],
+                                      "proposal_error": summary["billing_proposal_error"]}):
                         pass
                 if summary["privacy_ran"]:
                     with c.start_as_current_observation(

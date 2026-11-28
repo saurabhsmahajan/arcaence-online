@@ -16,6 +16,11 @@ Billing runs in SHADOW MODE too (BILLING_MODE=shadow), only when triage says ref
 gave a customer id. It runs the billing agent on a rolled-back transaction, records the outcome and a
 preview of the words, and changes nothing: not the reply, not the database, not the queue.
 
+The human gate (HUMAN_GATE_QUEUE=on, off by default): when billing's outcome is "queued", the proposal it made is put
+into the real review queue through the same writer as routing notes (desk_service, which can add and read items and can
+never decide one). That is the only thing this switch changes. The reply is still not changed, nothing is executed, and a
+queue failure is recorded by class name and touches nothing else.
+
 Privacy runs in SHADOW MODE the same way (PRIVACY_MODE=shadow), only when triage says privacy and the trusted caller
 gave a customer id. It records what it would have opened or cancelled, read from the request tables on a
 rolled-back transaction, and a preview of the words. It changes nothing: not the reply, not the database, not the queue.
@@ -62,6 +67,11 @@ def _default_billing():
     return default_billing_fn()
 
 
+def _default_proposal_queue():
+    """The writer for billing proposals, or None. Read at each call, not at import: only the exact word "on" turns it on."""
+    return _default_route if os.environ.get("HUMAN_GATE_QUEUE") == "on" else None
+
+
 def _default_privacy():
     from privacy_shadow import default_privacy_fn
 
@@ -92,10 +102,11 @@ def _run_privacy_shadow(result, question, customer_id, privacy_fn):
             p["error"] = type(exc).__name__
 
 
-def _run_billing_shadow(result, question, customer_id, billing_fn):
+def _run_billing_shadow(result, question, customer_id, billing_fn, proposal_fn=None):
     """Fills result["billing"]. Never raises and never touches the reply."""
     b = {"ran": False, "mode": "shadow" if billing_fn else "off", "skipped": "", "outcome": "", "reason": "",
-         "steps": 0, "would_refund": False, "would_queue": False, "preview": "", "error": ""}
+         "steps": 0, "would_refund": False, "would_queue": False, "preview": "", "error": "",
+         "proposal_queued": False, "proposal_item_id": None, "proposal_error": ""}
     result["billing"] = b
     tri = result.get("triage", {})
     if billing_fn is None:
@@ -111,8 +122,22 @@ def _run_billing_shadow(result, question, customer_id, billing_fn):
             b.update(ran=True, outcome=rec.get("outcome") or "", reason=rec.get("reason") or "",
                      steps=len(rec.get("steps", [])), would_refund=bool(refund), would_queue=rec.get("outcome") == "queued",
                      preview=billing_reply(rec, refund, queued=True), error=str(rec.get("error") or ""))
+            if proposal_fn is not None and b["would_queue"]:
+                _queue_proposals(b, out.get("proposals") or [], proposal_fn)
         except Exception as exc:  # the class name only
             b["error"] = type(exc).__name__
+
+
+def _queue_proposals(b, proposals, proposal_fn):
+    """Put each proposal the billing agent made into the review queue. A failure is the class name only and stops here."""
+    for proposal in proposals:
+        try:
+            item = str(proposal_fn(proposal))
+        except Exception as exc:  # the class name only: a failure here must never touch the reply
+            b["proposal_error"] = type(exc).__name__
+            return
+        b["proposal_queued"] = True
+        b["proposal_item_id"] = b["proposal_item_id"] or item
 
 
 def _run_triage(result, question, triage_fn, route_fn):
@@ -138,7 +163,7 @@ def _run_triage(result, question, triage_fn, route_fn):
 
 
 def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None,
-                   triage_fn=None, route_fn=None, customer_id=None, billing_fn=None, privacy_fn=None) -> dict:
+                   triage_fn=None, route_fn=None, customer_id=None, billing_fn=None, privacy_fn=None, proposal_fn=None) -> dict:
     if answer_fn is None:
         from desk import desk_answer as answer_fn
     enqueue_fn = enqueue_fn or _default_enqueue
@@ -147,6 +172,7 @@ def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None
     route_fn = route_fn or _default_route
     billing_fn = billing_fn or _default_billing()
     privacy_fn = privacy_fn or _default_privacy()
+    proposal_fn = proposal_fn or _default_proposal_queue()
     started = time.perf_counter()
 
     result = answer_fn(question)
@@ -161,7 +187,7 @@ def handle_message(question: str, answer_fn=None, enqueue_fn=None, trace_fn=None
                 result["answer"] = QUEUE_FAILED_REPLY
 
     _run_triage(result, question, triage_fn, route_fn)
-    _run_billing_shadow(result, question, customer_id, billing_fn)
+    _run_billing_shadow(result, question, customer_id, billing_fn, proposal_fn)
     _run_privacy_shadow(result, question, customer_id, privacy_fn)
 
     try:
