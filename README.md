@@ -21,7 +21,7 @@ Three layers, one problem:
 | Phase 0: synthetic corpus, traps list, core golden set | Done |
 | RAG (ingestion, grounding, access control, evals, service) | In progress (ingestion, grounding, verified answers and access control done, gate G1 met; evals in CI, review queue, service wrapper, container and tracing done, gate G3 met) |
 | MCP server | In progress (read tools, masking, fixed role, write tools, privacy tools, accessibility tool, policy server, resource and prompt, attack harness and Inspector evidence done) |
-| Multi-agent desk | In progress (triage agent and billing agent built and running in shadow mode, human gate proven; privacy agent and gates G4 and G5 still to do) |
+| Multi-agent desk | In progress (triage, billing and privacy agents built and running in shadow mode, 27 desk cases end to end, the human gate shown through the handler on the real database; evidence for G4 and G5 recorded, scorecard G6 still to do) |
 
 Target for the first version (AOP v1): 30 November 2026. The plan is gate-based: G1 (RAG foundation), G2 (MCP attack harness), G3 (RAG eval in CI and review queue), G4 and G5 (desk and human gate), G6 (one scorecard across all three).
 
@@ -83,6 +83,7 @@ The architecture is built in versions, one file per version, plus a log of every
 | [v0.13 Case IDs, the review queue, the desk service, the container and tracing](docs/architecture/v0.13-case-id-review-queue-desk-service-container-and-tracing.md) | 25 Nov 2026 | A server-made case ID on every reply, a review queue whose states the database enforces, a least-privilege service login, a keyed service with rate limit, daily cap and concurrency limit, a container with no secrets baked in, metadata-only Langfuse traces, a reply that never promises a review that did not happen, and gate G3 met. |
 | [v0.14 The triage agent, the typed handoff and shadow mode](docs/architecture/v0.14-triage-agent-typed-handoff-and-shadow-mode.md) | 27 Nov 2026 | A triage agent that decides who handles a message and never what to do, with no tools and no customer data, a typed handoff checked in code (a bad fact is dropped, a broken shape falls back), shadow mode that leaves a routing note and never changes the reply, a routing golden set scored by cost of error (dev 25 of 25, fresh holdout 15 of 15), and triage metadata in the traces. |
 | [v0.15 The billing agent, shadow mode for money and the human gate](docs/architecture/v0.15-billing-agent-human-gate-and-shadow-mode.md) | 28 Nov 2026 | A billing agent where the model decides what to do and code owns identity, the token, the commit and the reply, hard limits kept in the MCP server, four outcomes where a fault never counts as correct, a pre-registered billing eval (dev 10 of 10 on three runs, holdout 4 of 4 run once, ten desk cases 10 of 10), shadow mode in a rolled-back transaction, and a person's decide script proven on the real database. |
+| [v0.16 The privacy agent, 27 desk cases and the human gate through the handler](docs/architecture/v0.16-privacy-agent-desk-cases-and-human-gate-through-the-handler.md) | 28 Nov 2026 | A privacy agent whose tools take no arguments and whose case is one action, four outcomes read from the tool by code, a privacy eval scored from the request tables (dev 11 of 11 after one prompt fix, holdout 5 of 5 run once), fixed reply words that never say deleted or sent, shadow mode, 17 privacy desk cases (27 with billing), a handler switch that queues a billing proposal in the real review queue, and the human gate shown through the handler (11 of 11 steps). |
 
 Decisions and their trade-offs: [decisions.md](docs/architecture/decisions.md).
 
@@ -117,6 +118,8 @@ Findings from the RAG Phase 3 work: [rag-phase-3-evals-and-desk.md](docs/build-l
 Findings from the RAG Phase 4 and 5 work: [rag-phase-4-5-service-and-tracing.md](docs/build-logs/rag-phase-4-5-service-and-tracing.md).
 
 Findings from the desk triage agent work: [desk-triage-agent-and-shadow-mode.md](docs/build-logs/desk-triage-agent-and-shadow-mode.md).
+
+Findings from the desk privacy agent work: [desk-privacy-agent-and-human-gate.md](docs/build-logs/desk-privacy-agent-and-human-gate.md).
 
 ## Blogs
 
