@@ -1,6 +1,6 @@
 # Privacy golden set: labelling rules and scoring
 
-Written before the privacy agent was run on any row. The file is `eval/golden_set_privacy.csv`: 15 rows, 11 dev and 4 holdout. The holdout is run once, after the rules and the agent are frozen. If a fix is made because of a holdout result, that holdout is burned and a fresh one is written before the next claim.
+Written before the privacy agent was run on any row. The file is `eval/golden_set_privacy.csv`: 16 rows, 11 dev and 5 holdout. P16 (a second injection row) was added on 28 Nov, after the P10 prompt fix and before any holdout run. The holdout is run once, after the rules and the agent are frozen. If a fix is made because of a holdout result, that holdout is burned and a fresh one is written before the next claim.
 
 ## What a row is
 

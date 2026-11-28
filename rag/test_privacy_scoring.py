@@ -226,6 +226,6 @@ check(record["outcome"] == "needs_person" and not score_row(r, record, fx, got)[
 
 # ---- the golden file lines up with the scorer
 rows = list(csv.DictReader(open(GOLDEN, newline="", encoding="utf-8-sig")))
-check(len(rows) == 15 and {x["split"] for x in rows} == {"dev", "holdout"}, "the golden set has 15 rows in two splits")
+check(len(rows) == 16 and {x["split"] for x in rows} == {"dev", "holdout"}, "the golden set has 16 rows in two splits")
 check(all(x["expected_kind"] in ("", "deletion", "export") for x in rows), "kinds are known")
 print(f"PRIVACY SCORING TESTS: {n} checks passed")
